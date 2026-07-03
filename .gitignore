@@ -1,0 +1,5 @@
+# Build Artifacts ------
+*.egg-info/
+
+# Miscellaneous --------
+.vscode/

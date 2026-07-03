@@ -1,0 +1,57 @@
+[build-system]
+requires        = ["setuptools>=61.0.0"]
+build-backend   = "setuptools.build_meta"
+
+[project]
+name            = "gwmlt"
+version         = "0.1.0"
+description     = "Machine learning workflows for gravitational wave astronomy"
+readme          = "README.md"
+requires-python = ">=3.12, <3.13"
+
+dependencies = [
+    # Core
+    "numpy",
+    "scipy",
+    "matplotlib",
+
+    # Data handling
+    "pandas",
+    "h5py",
+
+    # Astrophysics
+    "pycbc",
+
+    # Machine learning
+    "torch",
+]
+
+authors = [
+    { name = "Sparsha Ray", email = "sparsharay@gmail.com" }
+]
+
+license = "GPL-3.0-only"
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.12",
+]
+
+[tool.pixi.workspace]
+channels  = ["conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.dependencies]
+python = "3.12.*"
+pip = "*"
+gsl = "*"
+gcc = "*"
+
+[tool.pixi.pypi-dependencies]
+gwmlt = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+install-teobresums = "bash scripts/install_teobresums.sh"
