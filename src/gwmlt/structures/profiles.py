@@ -29,7 +29,9 @@ class Eccentric:
     Parameters
     ----------
     eccentricity : float
-        Orbital eccentricity of the binary evaluated at the initial condition.
+        Orbital eccentricity of the binary.
+        Evaluated at the initial condition for LIGO band 
+        and at the reference frequency (f_ref) for the decihertz band.
     anomaly : float, optional
         True anomaly of the binary system in radians at the initial condition.
         Default is 0.0.

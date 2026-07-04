@@ -11,6 +11,8 @@ from ..config import DEFAULT_NOISE_PROFILES
 import numpy as np
 
 
+# Interferometer Network Configurations -----------------------------------------------------------
+
 @dataclass(frozen=True)
 class LVK :
 
@@ -116,6 +118,8 @@ class Decihertz :
     def active_ifos(self) -> List[str] :
         return list(self.resolved_paths.keys())
 
+
+# Helper function to resolve noise profile paths for given interferometers ------------------------
 
 def _resolve_paths(noise_profiles: List[str | Path | None], ifo_list: List[str]) -> Dict[str, Path] :
 
