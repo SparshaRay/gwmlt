@@ -24,6 +24,10 @@ dependencies = [
 
     # Machine learning
     "torch",
+
+    # Miscellaneous
+    "tqdm",
+    "notebook",
 ]
 
 authors = [

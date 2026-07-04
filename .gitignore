@@ -1,5 +1,6 @@
 # Build Artifacts ------
 *.egg-info/
+*__pycache__/
 
 # Miscellaneous --------
 .vscode/
