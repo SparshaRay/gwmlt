@@ -78,8 +78,8 @@ class Decihertz :
     ifo_list : list of str, or None, optional
         Target interferometers (e.g., ['IndIGO-D'] etc.).
         Default is None.
-    f_ref : float, optional
-        Sets reference frequency for eccentricity and spins.
+    ecc_f_ref : float, optional
+        Reference frequency for eccentricity.
         Default is 20.0
     f_low : float, optional
         Lower bound of frequency range for all analysis (in Hz).
@@ -104,7 +104,7 @@ class Decihertz :
     wf_duration    : float
     noise_profiles : List[str | Path | None]
     ifo_list       : Union[None, List[str]] = None
-    f_ref          : float = 20.0
+    ecc_f_ref      : float = 20.0
     f_low          : float = 1.00
     sampling_rate  : float = 20.0
 
