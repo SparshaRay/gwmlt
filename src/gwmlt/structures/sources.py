@@ -42,7 +42,7 @@ class BBHSystem :
         plane perpendicular to the orbital angular momentum in radians.
         Default is 0.0.
     phi_jl : float, optional
-        Azimuthal angle of the orbital angular momentum on its cone of precession 
+        Azimuthal angle of the orbital angular momentum L on its cone of precession 
         around the total angular momentum J in radians.
         Default is 0.0.
     ra : float, optional
@@ -63,11 +63,14 @@ class BBHSystem :
     geocent_time : float, optional
         The geocentric trigger time (coalescence time at the center of the Earth) in GPS seconds.
         Default is 0.0.
+    luminosity_distance : float, optional
+        Luminosity distance to the source in megaparsecs (Mpc).
+        Default is 100.0.
 
     Notes
     -----
     Spins and orientation angles are defined in the J-frame convention matching Bilby parameter estimation specifications.
-    Downstream wrappers will project these into L-frame alignments as required by PyCBC/LALSimulation waveform models.
+    Downstream wrappers will project these into L0-frame alignments as required by PyCBC/LALSimulation waveform models.
     (i.e., cartesian spin components spin1x, spin1y, spin1z, spin2x, spin2y, spin2z)
     """
 
@@ -88,4 +91,5 @@ class BBHSystem :
     phase    : float = 0.0
     psi      : float = 0.0
 
-    geocent_time : float = 0.0
+    geocent_time        : float = 0.0
+    luminosity_distance : float = 100.0
