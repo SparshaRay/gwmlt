@@ -7,7 +7,7 @@ name            = "gwmlt"
 version         = "0.1.0"
 description     = "Machine learning workflows for gravitational wave astronomy"
 readme          = "README.md"
-requires-python = ">=3.12, <3.13"
+requires-python = ">=3.13, <3.14"
 
 dependencies = [
     # Core
@@ -21,6 +21,8 @@ dependencies = [
 
     # Astrophysics
     "pycbc",
+    "lalsuite",
+    "astropy",
 
     # Machine learning
     "torch",
@@ -41,7 +43,7 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Astronomy",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
 [tool.pixi.workspace]
@@ -49,7 +51,8 @@ channels  = ["conda-forge"]
 platforms = ["linux-64"]
 
 [tool.pixi.dependencies]
-python = "3.12.*"
+python = "3.13.*"
+pytest = "*"
 pip = "*"
 gsl = "*"
 gcc = "*"
@@ -59,3 +62,4 @@ gwmlt = { path = ".", editable = true }
 
 [tool.pixi.tasks]
 install-teobresums = "bash scripts/install_teobresums.sh"
+tests = "pytest -v" 
