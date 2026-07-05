@@ -2,93 +2,8 @@
 Structs for GW Source Parameters
 """
 
-from dataclasses import dataclass
-
-
-@dataclass(frozen=True)
-class _JFrameSpins :
-
-    """
-    Spins and orientation in the J-frame (used by Bilby).
-
-    Parameters
-    ----------
-    a_1 : float, optional
-        Dimensionless spin magnitude of the primary binary. 
-        Must lie in the range [0, 1]. Default is 0.0.
-    a_2 : float, optional
-        Dimensionless spin magnitude of the secondary binary. 
-        Must lie in the range [0, 1]. Default is 0.0.
-    tilt_1 : float, optional
-        Zenith angle between the primary spin vector and the orbital angular 
-        momentum vector in radians, defined at the reference frequency. 
-        Default is 0.0.
-    tilt_2 : float, optional
-        Zenith angle between the secondary spin vector and the orbital angular 
-        momentum vector in radians, defined at the reference frequency. 
-        Default is 0.0.
-    phi_12 : float, optional
-        Difference between the azimuthal angles of the two spin vectors in the 
-        plane perpendicular to the orbital angular momentum in radians. 
-        Default is 0.0.
-    phi_jl : float, optional
-        Azimuthal angle of the orbital angular momentum L on its cone of precession 
-        around the total angular momentum J in radians.
-        Default is 0.0.
-    theta_jn : float, optional
-        Angle between the total angular momentum J and the line of sight vector in radians. 
-        Default is 0.0.
-    """
-
-    a_1      : float = 0.0
-    a_2      : float = 0.0
-
-    tilt_1   : float = 0.0
-    tilt_2   : float = 0.0
-
-    phi_12   : float = 0.0
-    phi_jl   : float = 0.0
-
-    theta_jn : float = 0.0
-
-
-@dataclass(frozen=True)
-class _LFrameSpins :
-
-    """
-    Cartesian spin components and orientation in the L0-frame.
-    This matches the reference frame coordinates used by PyCBC and LALSimulation.
-
-    Parameters
-    ----------
-    inclination : float, optional
-        Inclination angle defined as the angle between the orbital angular momentum L
-        and the line of sight vector in radians. Default is 0.0.
-    spin1x : float, optional
-        The x-component of the primary dimensionless spin vector. Default is 0.0.
-    spin1y : float, optional
-        The y-component of the primary dimensionless spin vector. Default is 0.0.
-    spin1z : float, optional
-        The z-component of the primary dimensionless spin vector (aligned spin).
-        Default is 0.0.
-    spin2x : float, optional
-        The x-component of the secondary dimensionless spin vector. Default is 0.0.
-    spin2y : float, optional
-        The y-component of the secondary dimensionless spin vector. Default is 0.0.
-    spin2z : float, optional
-        The z-component of the secondary dimensionless spin vector (aligned spin).
-        Default is 0.0.
-    """
-
-    inclination : float = 0.0
-
-    spin1x      : float = 0.0
-    spin1y      : float = 0.0
-    spin1z      : float = 0.0
-
-    spin2x      : float = 0.0
-    spin2y      : float = 0.0
-    spin2z      : float = 0.0
+from __future__ import annotations
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -127,9 +42,14 @@ class BBHSystem :
     luminosity_distance : float, optional
         Luminosity distance to the source in megaparsecs (Mpc).
         Default is 100.0.
-    j_frame : _JFrameSpins
+    spins : BBHSystem.JFrameSpins, or BBHSystem.LFrameSpins, or None, optional
+        Struct containing spin parameters. Default is None, which implies non-spinning binaries.
+    
+    Attributes
+    ----------
+    j_frame : BBHSystem.JFrameSpins
         Struct containing J-frame spin parameters.
-    l_frame : _LFrameSpins
+    l_frame : BBHSystem.LFrameSpins
         Struct containing L-frame spin parameters.
     """
 
@@ -145,48 +65,19 @@ class BBHSystem :
     geocent_time        : float = 0.0
     luminosity_distance : float = 100.0
 
-    j_frame : _JFrameSpins = _JFrameSpins()
-    l_frame : _LFrameSpins = _LFrameSpins()
+    spins : "BBHSystem.JFrameSpins" | "BBHSystem.LFrameSpins" | None = field(default=None, repr=False)
 
-    # Initialization in J-frame --------------------------------
-    @classmethod
-    def from_jframe(
-        cls,
+    j_frame: "BBHSystem.JFrameSpins" = field(default_factory=lambda: BBHSystem.JFrameSpins(), init=False, repr=True)
+    l_frame: "BBHSystem.LFrameSpins" = field(default_factory=lambda: BBHSystem.LFrameSpins(), init=False, repr=True)
 
-        mass_1 : float,
-        mass_2 : float,
+    @dataclass(frozen=True)
+    class JFrameSpins :
 
-        a_1      : float = 0.0,
-        a_2      : float = 0.0,
-        tilt_1   : float = 0.0,
-        tilt_2   : float = 0.0,
-        phi_12   : float = 0.0,
-        phi_jl   : float = 0.0,
-        theta_jn : float = 0.0,
-
-        ra       : float = 0.0,
-        dec      : float = 0.0,
-
-        phase    : float = 0.0,
-        psi      : float = 0.0,
-
-        geocent_time        : float = 0.0,
-        luminosity_distance : float = 100.0,
-
-    ) -> "BBHSystem" :
-        
         """
-        Construct a BBHSystem specifying J-frame spin coordinates.
-        Automatically populates the L-frame spin values too.
+        Spins and orientation in the J-frame (used by Bilby).
 
         Parameters
         ----------
-        mass_1 : float
-            Detector-frame mass of the first binary in solar masses.
-            This is referred to as the primary (heavier), but the ordering is not enforced.
-        mass_2 : float
-            Detector-frame mass of the second binary in solar masses.
-            This is referred to as the secondary (lighter), but the ordering is not enforced.
         a_1 : float, optional
             Dimensionless spin magnitude of the primary binary. 
             Must lie in the range [0, 1]. Default is 0.0.
@@ -212,85 +103,28 @@ class BBHSystem :
         theta_jn : float, optional
             Angle between the total angular momentum J and the line of sight vector in radians. 
             Default is 0.0.
-        ra : float, optional
-            Right ascension of the source in radians.
-            Default is 0.0.
-        dec : float, optional
-            Declination of the source in radians.
-            Default is 0.0.
-        phase : float, optional
-            Coalescence orbital phase of the binary system in radians. 
-            Default is 0.0.
-        psi : float, optional
-            Polarization angle of the gravitational wave in radians.
-            Default is 0.0.
-        geocent_time : float, optional
-            The geocentric trigger time (coalescence time at the center of the Earth) in GPS seconds. 
-            Default is 0.0.
-        luminosity_distance : float, optional
-            Luminosity distance to the source in megaparsecs (Mpc).
-            Default is 100.0.
-
-        Returns
-        -------
-        BBHSystem
         """
 
-        j_struct = _JFrameSpins(
-            a_1=a_1, a_2=a_2, tilt_1=tilt_1, tilt_2=tilt_2,
-            phi_12=phi_12, phi_jl=phi_jl, theta_jn=theta_jn
-        )
+        a_1      : float = 0.0
+        a_2      : float = 0.0
 
-        from ..utils.physics import _convert_jframe_to_lframe
-        l_struct = _convert_jframe_to_lframe(mass_1, mass_2, j_struct)
+        tilt_1   : float = 0.0
+        tilt_2   : float = 0.0
 
-        return cls(
-            mass_1=mass_1, mass_2=mass_2, ra=ra, dec=dec, phase=phase, psi=psi,
-            geocent_time=geocent_time, luminosity_distance=luminosity_distance,
-            j_frame=j_struct, l_frame=l_struct
-        )
+        phi_12   : float = 0.0
+        phi_jl   : float = 0.0
 
-    # Initialization in L-frame --------------------------------
-    @classmethod
-    def from_lframe(
-        cls,
+        theta_jn : float = 0.0
+    
+    @dataclass(frozen=True)
+    class LFrameSpins :
 
-        mass_1 : float,
-        mass_2 : float,
-
-        spin1x      : float = 0.0,
-        spin1y      : float = 0.0,
-        spin1z      : float = 0.0,
-        spin2x      : float = 0.0,
-        spin2y      : float = 0.0,
-        spin2z      : float = 0.0,
-        inclination : float = 0.0,
-
-        ra          : float = 0.0,
-        dec         : float = 0.0,
-
-        phase       : float = 0.0,
-        psi         : float = 0.0,
-
-        geocent_time        : float = 0.0,
-        luminosity_distance : float = 100.0,
-        
-    ) -> "BBHSystem" :
-        
         """
-        Construct a complete system specifying Cartesian L0-frame spin components natively.
-
-        Automatically performs coordinate frame transformations under the hood to calculate and 
-        populate the alternative J-frame orbital angles and magnitudes.
+        Cartesian spin components and orientation in the L0-frame.
+        This matches the reference frame coordinates used by PyCBC and LALSimulation.
 
         Parameters
         ----------
-        mass_1 : float
-            Detector-frame mass of the first binary in solar masses.
-            This is referred to as the primary (heavier), but the ordering is not enforced.
-        mass_2 : float
-            Detector-frame mass of the second binary in solar masses.
-            This is referred to as the secondary (lighter), but the ordering is not enforced.
         inclination : float, optional
             Inclination angle defined as the angle between the orbital angular momentum L
             and the line of sight vector in radians. Default is 0.0.
@@ -308,41 +142,41 @@ class BBHSystem :
         spin2z : float, optional
             The z-component of the secondary dimensionless spin vector (aligned spin).
             Default is 0.0.
-        ra : float, optional
-            Right ascension of the source in radians.
-            Default is 0.0.
-        dec : float, optional
-            Declination of the source in radians.
-            Default is 0.0.
-        phase : float, optional
-            Coalescence orbital phase of the binary system in radians. 
-            Default is 0.0.
-        psi : float, optional
-            Polarization angle of the gravitational wave in radians.
-            Default is 0.0.
-        geocent_time : float, optional
-            The geocentric trigger time (coalescence time at the center of the Earth) in GPS seconds. 
-            Default is 0.0.
-        luminosity_distance : float, optional
-            Luminosity distance to the source in megaparsecs (Mpc).
-            Default is 100.0.
-
-        Returns
-        -------
-        BBHSystem
         """
 
-        l_struct = _LFrameSpins(
-            inclination=inclination,
-            spin1x=spin1x, spin1y=spin1y, spin1z=spin1z,
-            spin2x=spin2x, spin2y=spin2y, spin2z=spin2z
-        )
+        inclination : float = 0.0
 
-        from ..utils.physics import _convert_lframe_to_jframe
-        j_struct = _convert_lframe_to_jframe(mass_1, mass_2, l_struct)
+        spin1x      : float = 0.0
+        spin1y      : float = 0.0
+        spin1z      : float = 0.0
 
-        return cls(
-            mass_1=mass_1, mass_2=mass_2, ra=ra, dec=dec, phase=phase, psi=psi,
-            geocent_time=geocent_time, luminosity_distance=luminosity_distance,
-            j_frame=j_struct, l_frame=l_struct
-        )
+        spin2x      : float = 0.0
+        spin2y      : float = 0.0
+        spin2z      : float = 0.0
+    
+
+    def __post_init__(self) -> None :
+
+        if self.spins is None :
+            object.__setattr__(self, "j_frame", self.JFrameSpins())
+            object.__setattr__(self, "l_frame", self.LFrameSpins())
+
+        elif isinstance(self.spins, self.JFrameSpins) :
+            from ..utils.physics import _convert_jframe_to_lframe
+            l_struct = _convert_jframe_to_lframe(self.mass_1, self.mass_2, self.spins)
+            object.__setattr__(self, "j_frame", self.spins)
+            object.__setattr__(self, "l_frame", l_struct)
+
+        elif isinstance(self.spins, self.LFrameSpins) :
+            from ..utils.physics import _convert_lframe_to_jframe
+            j_struct = _convert_lframe_to_jframe(self.mass_1, self.mass_2, self.spins)
+            object.__setattr__(self, "j_frame", j_struct)
+            object.__setattr__(self, "l_frame", self.spins)
+
+        else :
+            raise TypeError(
+                f"Invalid spins type '{type(self.spins).__name__}'."
+                "Must be BBHSystem.JFrameSpins, BBHSystem.LFrameSpins, or None."
+            )
+
+        object.__setattr__(self, "spins", None)

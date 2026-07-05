@@ -9,8 +9,8 @@ def test_Lframe_Jframe_equivalence() :
     
     from gwmlt.structures.sources import BBHSystem
 
-    jframe_init = BBHSystem.from_jframe(mass_1=10, mass_2=10, a_1=0.5, a_2=0.75, tilt_1=0.0, tilt_2=np.pi)
-    lframe_init = BBHSystem.from_lframe(mass_1=10, mass_2=10, spin1z=0.5, spin2z=-0.75)
+    jframe_init = BBHSystem(mass_1=10, mass_2=10, spins=BBHSystem.JFrameSpins(a_1=0.5, a_2=0.75, tilt_1=0.0, tilt_2=np.pi))
+    lframe_init = BBHSystem(mass_1=10, mass_2=10, spins=BBHSystem.LFrameSpins(inclination=0.0, spin1z=0.5, spin2z=-0.75))
 
     l_frame_eqiv = asdict(jframe_init.l_frame) == pytest.approx(asdict(lframe_init.l_frame))
     j_frame_eqiv = asdict(jframe_init.j_frame) == pytest.approx(asdict(lframe_init.j_frame))
