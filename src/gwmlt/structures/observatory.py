@@ -6,7 +6,7 @@ from typing import List, Dict, Union
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..config import DEFAULT_NOISE_PROFILES
+from ..config import config
 
 import numpy as np
 
@@ -141,11 +141,13 @@ def _resolve_paths(noise_profiles: List[str | Path | None], ifo_list: List[str])
     noise_profiles = noise_profiles if isinstance(noise_profiles, list) else [noise_profiles]
     available_ifos = ifo_list       if isinstance(ifo_list,       list) else [ifo_list      ]
 
+    default_noise_profiles = config.noise.noise_profiles
+
     # Handle the case when ifo_list is None, defaults to all ifos available in the noise profile
     if available_ifos == [None] :
-        assert (len(noise_profiles) == 1) and (noise_profiles[0] in DEFAULT_NOISE_PROFILES), \
-            "If `ifo_list` is None, `noise_profiles` must be a single valid tag from DEFAULT_NOISE_PROFILES."
-        available_ifos = list(DEFAULT_NOISE_PROFILES[noise_profiles[0]].keys())
+        assert (len(noise_profiles) == 1) and (noise_profiles[0] in default_noise_profiles), \
+            "If `ifo_list` is None, `noise_profiles` must be a single valid tag from default noise profiles."
+        available_ifos = list(default_noise_profiles[noise_profiles[0]].keys())
     
     paths_map = {}
     # Get all path maps
@@ -156,10 +158,10 @@ def _resolve_paths(noise_profiles: List[str | Path | None], ifo_list: List[str])
 
         if noise_profile is None :
             paths_map[ifo] = None
-        elif noise_profile in DEFAULT_NOISE_PROFILES :
-            assert ifo in DEFAULT_NOISE_PROFILES[noise_profile], \
+        elif noise_profile in default_noise_profiles :
+            assert ifo in default_noise_profiles[noise_profile], \
                 f"Interferometer '{ifo}' does not have a noise profile defined for '{noise_profile}'."
-            paths_map[ifo] = DEFAULT_NOISE_PROFILES[noise_profile][ifo]
+            paths_map[ifo] = default_noise_profiles[noise_profile][ifo]
         elif Path(noise_profile).is_file() :
             paths_map[ifo] = Path(noise_profile)
         else :

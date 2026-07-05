@@ -1,5 +1,5 @@
 """
-Data and Config Structs
+Data Structs
 """
 
 from .sources import BBHSystem

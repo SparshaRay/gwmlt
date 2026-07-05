@@ -2,7 +2,7 @@
 Physics Utilities
 """
 
-from ..config import _DEFAULT_F_REF
+from ..config import config
 from ..constants import MSUN_SI
 from ..structures.sources import _JFrameSpins, _LFrameSpins
 
@@ -14,7 +14,7 @@ import lalsimulation
 def _convert_jframe_to_lframe(
         mass_1 : float, mass_2 : float,
         spins_jframe : _JFrameSpins,
-        f_ref   : float = _DEFAULT_F_REF,
+        f_ref   : float = config.waveform.f_ref,
         phi_ref : float = 0.0
     ) -> _LFrameSpins :
 
@@ -71,7 +71,7 @@ def _convert_jframe_to_lframe(
 def _convert_lframe_to_jframe(
         mass_1 : float, mass_2 : float,
         spins_lframe : _LFrameSpins,
-        f_ref   : float = _DEFAULT_F_REF,
+        f_ref   : float = config.waveform.f_ref,
         phi_ref : float = 0.0
     ) -> _JFrameSpins :
 

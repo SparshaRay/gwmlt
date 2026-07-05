@@ -172,7 +172,8 @@ class BBHSystem :
 
         geocent_time        : float = 0.0,
         luminosity_distance : float = 100.0,
-    ) :
+
+    ) -> "BBHSystem" :
         
         """
         Construct a BBHSystem specifying J-frame spin coordinates.
@@ -273,7 +274,8 @@ class BBHSystem :
 
         geocent_time        : float = 0.0,
         luminosity_distance : float = 100.0,
-    ) :
+        
+    ) -> "BBHSystem" :
         
         """
         Construct a complete system specifying Cartesian L0-frame spin components natively.
