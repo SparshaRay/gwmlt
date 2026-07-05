@@ -175,7 +175,7 @@ class BBHSystem :
 
         else :
             raise TypeError(
-                f"Invalid spins type '{type(self.spins).__name__}'."
+                f"Invalid spins type '{type(self.spins).__name__}'. "
                 "Must be BBHSystem.JFrameSpins, BBHSystem.LFrameSpins, or None."
             )
 
