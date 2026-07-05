@@ -2,11 +2,11 @@
 Physics Utilities
 """
 
+import lalsimulation
+
 from ..config import config
 from ..constants import MSUN_SI
 from ..structures.sources import _JFrameSpins, _LFrameSpins
-
-import lalsimulation
 
 
 # L and J frame interconversion functions ---------------------------------------------------------

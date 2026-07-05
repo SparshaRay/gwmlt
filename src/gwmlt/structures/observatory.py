@@ -5,9 +5,9 @@ Structs Defining Observatory Networks and Configurations.
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..config import config
-
 import numpy as np
+
+from ..config import config
 
 
 # Interferometer Network Configurations -----------------------------------------------------------
