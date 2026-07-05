@@ -2,7 +2,6 @@
 Structs Defining Observatory Networks and Configurations.
 """
 
-from typing import List, Dict, Union
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -22,7 +21,7 @@ class LVK :
     Parameters
     ----------
     noise_profiles : list of str or Path or None
-        Target noise profile tag (e.g., [None, 'O4_gauss'] etc.)
+        Target noise profile tag (e.g., [None, 'O4_gaus'] etc.)
     ifo_list : list of str, or None, optional
         Target interferometers (e.g., ['H1', 'L1'] etc.).
         Default is None.
@@ -47,19 +46,19 @@ class LVK :
     Otherwise, `noise_profiles` and `ifo_list` must be broadcastable to a common shape.
     """
 
-    noise_profiles : List[str | Path | None]
-    ifo_list       : Union[None, List[str]] = None
+    noise_profiles : list[str | Path | None]
+    ifo_list       : list[str] | None = None
     f_low          : float = 20.0
     sampling_rate  : float = 4096.0
 
-    resolved_paths: Dict[str, Path] = field(default_factory=dict, init=False, repr=True)
+    resolved_paths: dict[str, Path] = field(default_factory=dict, init=False, repr=True)
 
     def __post_init__(self) :
         paths_map = _resolve_paths(self.noise_profiles, self.ifo_list)
         object.__setattr__(self, "resolved_paths", paths_map)
 
     @property
-    def active_ifos(self) -> List[str] :
+    def active_ifos(self) -> list[str] :
         return list(self.resolved_paths.keys())
 
 
@@ -102,26 +101,26 @@ class Decihertz :
     """
 
     wf_duration    : float
-    noise_profiles : List[str | Path | None]
-    ifo_list       : Union[None, List[str]] = None
+    noise_profiles : list[str | Path | None]
+    ifo_list       : list[str] | None = None
     ecc_f_ref      : float = 20.0
     f_low          : float = 1.00
     sampling_rate  : float = 20.0
 
-    resolved_paths: Dict[str, Path] = field(default_factory=dict, init=False, repr=True)
+    resolved_paths: dict[str, Path] = field(default_factory=dict, init=False, repr=True)
 
     def __post_init__(self) :
         paths_map = _resolve_paths(self.noise_profiles, self.ifo_list)
         object.__setattr__(self, "resolved_paths", paths_map)
 
     @property
-    def active_ifos(self) -> List[str] :
+    def active_ifos(self) -> list[str] :
         return list(self.resolved_paths.keys())
 
 
 # Helper function to resolve noise profile paths for given interferometers ------------------------
 
-def _resolve_paths(noise_profiles: List[str | Path | None], ifo_list: List[str]) -> Dict[str, Path] :
+def _resolve_paths(noise_profiles: list[str | Path | None], ifo_list: list[str]) -> dict[str, Path] :
 
     """
     Resolve the noise profile paths for the given interferometers.
