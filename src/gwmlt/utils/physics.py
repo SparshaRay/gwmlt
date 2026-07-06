@@ -6,7 +6,7 @@ import lalsimulation
 
 from ..config import config
 from ..constants import MSUN_SI
-from ..structures.sources import BBHSystem
+from ..core.sources import BBHSystem
 
 
 # L and J frame interconversion functions ---------------------------------------------------------
