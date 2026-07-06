@@ -34,8 +34,9 @@ class WaveformConfig :
 
     f_ref : float = 20.0
     """
-    The reference frequency (in Hz) for spin values.
-    Changing this has no effect on non-precessing systems.
+    The reference frequency (in Hz) for spin values for IMRPhenomXO4a.
+    This parameter is automatically set to the f_lower value for TEOBResumS Dali.
+    Changing this has no effect on non-precessing systems beyond phase shifts.
     Default global value is 20.0 Hz, following Bilby values.
     """
 

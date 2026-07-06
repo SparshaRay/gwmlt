@@ -1,0 +1,128 @@
+"""
+Generate the Parameters Dict for PyCBC TD Waveform Generation
+"""
+
+from warnings import warn
+
+from ..core.sources import BBHSystem
+from ..core.profiles import Quasicircular, Eccentric, Lensed
+from ..core.observatories import LVK, Decihertz
+from ..config import config
+
+
+def get_pars(
+    source: BBHSystem,
+    profile: Quasicircular | Eccentric | Lensed,
+    observatory: LVK | Decihertz,
+) -> dict :
+
+    """
+    Generate the parameters dictionary for PyCBC TD waveform generation.
+
+    Parameters
+    ----------
+    source : BBHSystem
+        The binary black hole system parameters.
+    profile : Quasicircular | Eccentric | Lensed
+        The waveform kind.
+    observatory : LVK | Decihertz
+        The observatory parameters.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the parameters for PyCBC `get_td_waveform` function.
+    """
+
+
+    # Binary Parameters ---------------------------------------------------------------------------
+
+    binary_params = {
+        "mass1"  : source.mass_1,
+        "mass2"  : source.mass_2,
+
+        "spin1x" : source.l_frame.spin1x,
+        "spin1y" : source.l_frame.spin1y,
+        "spin1z" : source.l_frame.spin1z,
+
+        "spin2x" : source.l_frame.spin2x,
+        "spin2y" : source.l_frame.spin2y,
+        "spin2z" : source.l_frame.spin2z,
+
+        "inclination" : source.l_frame.inclination,
+        "coa_phase"   : source.phase,
+        "distance"    : source.luminosity_distance,
+    }
+
+    # Since teobresums expects lambda1 and lambda2 values to be provided as well
+    if profile.wf_approximant == "teobresums" :
+        # No tidal effects for black holes
+        binary_params["lambda1"] = 0.0
+        binary_params["lambda2"] = 0.0
+
+
+    # Initial Conditions for Waveform Generation --------------------------------------------------
+    
+    initial_conditions = {}
+
+    if isinstance(observatory, LVK) :
+
+        if profile.wf_approximant == "IMRPhenomXO4a" :
+            initial_conditions["f_lower"] = observatory.f_low
+
+        elif profile.wf_approximant == "teobresums" :
+            initial_conditions["f_lower"] = observatory.f_low
+            initial_conditions["ecc"]     = profile.eccentricity
+            initial_conditions["anomaly"] = profile.anomaly
+        
+        else : raise NotImplementedError(f"Waveform approximant {profile.wf_approximant} is not supported")
+
+    elif isinstance(observatory, Decihertz) :
+
+        raise NotImplementedError("Decihertz band initial conditions are not implemented yet")
+
+        # if profile.wf_approximant == "IMRPhenomXO4a" :
+        #     f_start = get_imrphenomx_fstart(source, observatory.wf_duration)
+        #     initial_conditions["f_lower"] = f_start
+        
+        # elif profile.wf_approximant == "teobresums" :
+        #     f_start, ecc_start = get_teobresums_fstart(
+        #         source, observatory.wf_duration, profile.eccentricity, observatory.ecc_f_ref
+        #     )
+        #     initial_conditions["f_lower"] = f_start
+        #     initial_conditions["ecc"]     = ecc_start
+        #     initial_conditions["anomaly"] = profile.anomaly
+        
+        # else : raise NotImplementedError(f"Waveform approximant {profile.wf_approximant} is not supported")
+    
+    else : raise NotImplementedError(f"Observatory {observatory} is not supported")
+
+
+    # Waveform Generation Parameters --------------------------------------------------------------
+
+    waveform_params = {
+        "approximant" : profile.wf_approximant,
+        "delta_t"     : 1.0 / config.waveform.td_wf_gen_srate,
+    }
+
+    if profile.wf_approximant == "IMRPhenomXO4a" :
+        waveform_params["mode_array"] = config.waveform.imrphenomx_modes
+        if initial_conditions["f_lower"] <= config.waveform.f_ref :
+            waveform_params["f_ref"] = config.waveform.f_ref
+        else :
+            warn(
+                f"f_lower ({initial_conditions['f_lower']}) is greater than f_ref ({config.waveform.f_ref}). "
+                "Setting f_ref = f_lower for IMRPhenomXO4a waveform generation."
+            )
+            waveform_params["f_ref"] = initial_conditions["f_lower"]
+    
+    if profile.wf_approximant == "teobresums" :
+        waveform_params["use_mode_lm"] = config.waveform.teobresums_modes
+        waveform_params["ecc_freq"]    = config.waveform.ecc_freq
+
+
+    # Merge all parameters ------------------------------------------------------------------------
+
+    pars = {**binary_params, **initial_conditions, **waveform_params}
+    pars.update(profile.override_pars)
+    return pars
