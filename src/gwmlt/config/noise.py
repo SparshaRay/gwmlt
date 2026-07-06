@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
 from pathlib import Path
+
 from .base import NOISE_DATA_DIR
 
-@dataclass
+@dataclass(frozen=True)
 class NoiseConfig :
     """
     Configuration for noise data and PSDs.

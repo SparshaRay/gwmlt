@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-@dataclass
+@dataclass(frozen=True)
 class WaveformConfig :
     """
     Configuration for waveform generation.
