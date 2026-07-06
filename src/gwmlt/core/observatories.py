@@ -166,7 +166,7 @@ def _resolve_paths(noise_profiles: list[str | Path | None], ifo_list: list[str])
         ) from e
 
     paths_map = {}
-    for noise_profile, ifo in kv_pairs :
+    for ifo, noise_profile in kv_pairs :
 
         ifo = str(ifo)
         if ifo in paths_map :
