@@ -28,6 +28,7 @@ dependencies = [
     "torch",
 
     # Miscellaneous
+    "juliacall",
     "tqdm",
     "notebook",
 ]
@@ -62,4 +63,5 @@ gwmlt = { path = ".", editable = true }
 
 [tool.pixi.tasks]
 install-teobresums = "bash scripts/install_teobresums.sh"
+install-chypergeom = "bash scripts/install_chypergeom.sh"
 tests = "pytest -v" 
