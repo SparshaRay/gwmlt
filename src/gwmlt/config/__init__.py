@@ -72,4 +72,8 @@ def config_override(overrides: dict[str, Any]) -> Generator[GlobalConfig, None, 
             object.__setattr__(target_obj, attr_name, old_value)
 
 
-__all__ = ["config", "GlobalConfig", "config_override"]
+__all__ = [
+    "config", 
+    "GlobalConfig", 
+    "config_override"
+]

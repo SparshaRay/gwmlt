@@ -109,7 +109,7 @@ def _get_pars(
     initial_conditions = {}
 
     if observatory is None :
-        warn('Observatory is set to None. Setting f_lower to 20 Hz for waveform generation.'
+        warn('Observatory is set to None. Setting f_lower to 20 Hz for waveform generation. '
              'You can override this and other parameters by passing them as keyword arguments')
         initial_conditions["f_lower"] = 20.0
         if profile.wf_approximant == "teobresums" :
