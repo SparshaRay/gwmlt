@@ -46,6 +46,9 @@ def generate_waveform(
 
     hp = hp.taper_timeseries(location='TAPER_STARTEND')
     hc = hc.taper_timeseries(location='TAPER_STARTEND')
+
+    hp.start_time += source.geocent_time
+    hc.start_time += source.geocent_time
     
     return hp, hc, pars
 

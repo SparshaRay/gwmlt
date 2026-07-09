@@ -5,6 +5,8 @@ Structs for GW Source Parameters
 from __future__ import annotations
 from dataclasses import dataclass, field
 
+from lal import LIGOTimeGPS
+
 
 @dataclass(frozen=True)
 class BBHSystem :
@@ -36,7 +38,7 @@ class BBHSystem :
     psi : float, optional
         Polarization angle of the gravitational wave in radians.
         Default is 0.0.
-    geocent_time : float, optional
+    geocent_time : float or LIGOTimeGPS, optional
         The geocentric trigger time (coalescence time at the center of the Earth) in GPS seconds. 
         Default is 0.0.
     luminosity_distance : float, optional
@@ -62,7 +64,7 @@ class BBHSystem :
     phase  : float = 0.0
     psi    : float = 0.0
 
-    geocent_time        : float = 0.0
+    geocent_time        : float | LIGOTimeGPS = 0.0
     luminosity_distance : float = 100.0
 
     spins : "BBHSystem.JFrameSpins" | "BBHSystem.LFrameSpins" | None = field(default=None, repr=False)
@@ -156,6 +158,9 @@ class BBHSystem :
     
 
     def __post_init__(self) -> None :
+
+        if isinstance(self.geocent_time, float) :
+            object.__setattr__(self, "geocent_time", LIGOTimeGPS(self.geocent_time))
 
         if self.spins is None :
             object.__setattr__(self, "j_frame", self.JFrameSpins())
