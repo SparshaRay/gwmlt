@@ -5,7 +5,7 @@ Lensing by Isolated Point-mass Lenses
 import numpy as np
 from scipy.special import loggamma
 
-from ..core.profiles import Lensed
+from ..core.morphologies import Lensed
 from ..constants import C_SI, G_SI, MSUN_SI
 
 
@@ -82,21 +82,21 @@ def time_delay(
     return (4 * G_SI * MSUN_SI * ml * (1 + zl) / C_SI**3) * _time_delay_dimensionless(y)
 
 # Primary time delay user entry point function
-def get_time_delay(profile: Lensed) -> float :
+def get_time_delay(morphology: Lensed) -> float :
     """
-    Returns the time-delay between the two micro-images for a given lensing profile.
+    Returns the time-delay between the two micro-images for a given lensing morphology.
 
     Parameters
     ----------
-    profile : Lensed
-        The lensing profile containing lensing parameters.
+    morphology : Lensed
+        The lensing morphology containing lensing parameters.
 
     Returns
     -------
     float
         Time-delay between the two micro-images in seconds.
     """
-    return time_delay(profile.m_lens, profile.y_lens, profile.z_lens)
+    return time_delay(morphology.m_lens, morphology.y_lens, morphology.z_lens)
 
 
 # Frequency conversions -------------------------------------------------------

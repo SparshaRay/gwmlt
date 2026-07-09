@@ -3,7 +3,7 @@ Data Structs
 """
 
 from .sources import BBHSystem
-from .profiles import Quasicircular, Eccentric, Lensed
+from .morphologies import Quasicircular, Eccentric, Lensed
 from .observatories import LVK, Decihertz
 
 __all__ = [

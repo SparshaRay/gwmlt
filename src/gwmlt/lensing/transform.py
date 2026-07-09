@@ -5,7 +5,7 @@ Apply Lensing Effects on TD Waveforms
 import numpy as np
 from pycbc.types.timeseries import TimeSeries
 
-from ..core.profiles import Lensed
+from ..core.morphologies import Lensed
 from ..config import config
 from .pointlens import Ff_hybrid, time_delay
 
@@ -13,7 +13,7 @@ from .pointlens import Ff_hybrid, time_delay
 def apply_lensing(
     hp: TimeSeries,
     hc: TimeSeries,
-    profile: Lensed
+    morphology: Lensed
 ) -> tuple[TimeSeries, TimeSeries] :
 
     """
@@ -25,8 +25,8 @@ def apply_lensing(
         The h_plus timeseries.
     hc : TimeSeries
         The h_cross timeseries.
-    profile : Lensed
-        The lensing profile containing lensing parameters.
+    morphology : Lensed
+        The lensing morphology containing lensing parameters.
 
     Returns
     -------
@@ -34,9 +34,9 @@ def apply_lensing(
         A tuple containing the lensed h_plus and h_cross timeseries.
     """
 
-    ml = profile.m_lens
-    y  = profile.y_lens
-    zl = profile.z_lens
+    ml = morphology.m_lens
+    y  = morphology.y_lens
+    zl = morphology.z_lens
 
     td = time_delay(ml, y, zl)
 

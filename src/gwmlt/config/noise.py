@@ -12,7 +12,7 @@ class NoiseConfig :
     data_dir : Path = NOISE_DATA_DIR
     """Root directory holding noise files and PSDs."""
 
-    noise_profiles : dict[str, dict[str, Path]] = field(default_factory=lambda : {
+    noise_psds : dict[str, dict[str, Path]] = field(default_factory=lambda : {
 
         # Real glitch-free event-free detector noise timeseries 
         "O4_real": {
