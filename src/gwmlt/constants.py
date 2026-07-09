@@ -8,10 +8,13 @@ Physical and Astronomical Constants
 
 
 # Speed of light in vacuum (m/s)
-C_SI = 2.99792458e+8
+C_SI : float = 2.99792458e+8
 
 # Mass of the Sun (kg)
-MSUN_SI = 1.9884e+30
+MSUN_SI : float = 1.988475e+30
 
 # Gravitational constant (m^3 kg^-1 s^-2)
-G_SI = 6.67428e-11
+G_SI : float = 6.67430e-11
+
+# Astronomical Unit (m)
+AU_SI : float = 1.495978707e+11
