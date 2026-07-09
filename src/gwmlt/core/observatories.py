@@ -29,7 +29,7 @@ class LVK :
         Lower bound of frequency range for all analysis (in Hz).
         Sets reference frequency for waveform generation.
         Default is 20.0
-    sampling_rate : float, optional
+    sample_rate : float, optional
         Sampling rate of the data (in Hz).
         Sets upper bound of frequency range for all analysis at the Nyquist frequency.
         Default is 4096.0
@@ -46,10 +46,10 @@ class LVK :
     Otherwise, `noise_psds` and `ifo_list` must be broadcastable to a common shape.
     """
 
-    noise_psds    : list[str | Path | None]
-    ifo_list      : list[str] | None = None
-    f_low         : float = 20.0
-    sampling_rate : float = 4096.0
+    noise_psds  : list[str | Path | None]
+    ifo_list    : list[str] | None = None
+    f_low       : float = 20.0
+    sample_rate : float = 4096.0
 
     resolved_paths : dict[str, Path] = field(default_factory=dict, init=False, repr=True)
 
@@ -83,7 +83,7 @@ class Decihertz :
     f_low : float, optional
         Lower bound of frequency range for all analysis (in Hz).
         Default is 1.0
-    sampling_rate : float, optional
+    sample_rate : float, optional
         Sampling rate of the data (in Hz).
         Sets upper bound of frequency range for all analysis at the Nyquist frequency.
         Default is 20.0
@@ -100,12 +100,12 @@ class Decihertz :
     Otherwise, `noise_psds` and `ifo_list` must be broadcastable to a common shape.
     """
 
-    wf_duration   : float
-    noise_psds    : list[str | Path | None]
-    ifo_list      : list[str] | None = None
-    ecc_f_ref     : float = 20.0
-    f_low         : float = 1.00
-    sampling_rate : float = 20.0
+    wf_duration : float
+    noise_psds  : list[str | Path | None]
+    ifo_list    : list[str] | None = None
+    ecc_f_ref   : float = 20.0
+    f_low       : float = 1.00
+    sample_rate : float = 20.0
 
     resolved_paths : dict[str, Path] = field(default_factory=dict, init=False, repr=True)
 
