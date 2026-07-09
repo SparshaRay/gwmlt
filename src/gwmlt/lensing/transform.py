@@ -34,6 +34,9 @@ def apply_lensing(
         A tuple containing the lensed h_plus and h_cross timeseries.
     """
 
+    hp = hp.copy()
+    hc = hc.copy()
+
     ml = morphology.m_lens
     y  = morphology.y_lens
     zl = morphology.z_lens
@@ -44,12 +47,8 @@ def apply_lensing(
     wf_len = len(hp)
     ev_pad = (wf_len + td_pad) % 2
 
-    print(f"Waveform length before padding: {len(hp)} samples")
-
     hp.append_zeros(td_pad + ev_pad)
     hc.append_zeros(td_pad + ev_pad)
-
-    print(f"Waveform length after padding: {len(hp)} samples")
 
     hp_tilde = hp.to_frequencyseries()
     hc_tilde = hc.to_frequencyseries()
