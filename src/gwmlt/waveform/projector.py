@@ -22,7 +22,7 @@ def project_waveform(
     hc: TimeSeries,
     source: BBHSystem,
     observatory: LVK | Decihertz,
-) -> dict[str, TimeSeries] :
+) -> dict[str, tuple[TimeSeries, float]] :
 
     """
     Project the polarization timeseries onto the observatory detectors.
@@ -40,8 +40,9 @@ def project_waveform(
 
     Returns
     -------
-    dict[str, TimeSeries]
-        A dictionary containing the projected timeseries for each detector in the observatory.
+    dict[str, tuple[TimeSeries, float]]
+        A dictionary containing the projected timeseries and their corresponding 
+        time delays from geocenter for each detector in the observatory.
     """
 
     hp = hp.copy()
@@ -64,20 +65,30 @@ def project_waveform(
         
         # Project the waveform onto the detector
         strain = det.project_wave(hp, hc, source.ra, source.dec, source.psi)
+        geocenter_td = det.time_delay_from_earth_center(source.ra, source.dec, source.geocent_time)
 
         # ![WARNING] : This assumes long wavelength approximation which is not valid above ~333 Hz for IndIGO-D.
         # The signal is first projected and then downsampled because the downsampling is not an linear operation.
         # If the waveform itself is generated at IndIGO-D band, then projection creates aliasing artifacts.
+        # Usually, for 4096Hz to 20Hz downsampling, the waveform is projected down to 32Hz by Butterworth first,
+        # followed by polyphase resampling down to 20Hz. This is done to minimize aliasing artifacts.
         
         # If the strain is already at the desired sampling rate, no resampling is needed
-        if strain.sample_rate == observatory.sample_rate : projected_strains[detector_str] = strain
+        if strain.sample_rate == observatory.sample_rate : projected_strains[detector_str] = (strain, geocenter_td)
         else : # Resample the projected strain to the desired sampling rate
+
+            if abs(strain.sample_rate - observatory.sample_rate) < 1.0 :
+                warn(
+                    f"Strain sample rate {strain.sample_rate} is very close to observatory sample rate {observatory.sample_rate}.\n"
+                    "If not intentional, this usually indicates OBOE either in the waveform generation or post-processing steps."
+                )
 
             sig_start_time = strain.start_time
 
             # Padding
-            corrupt_datapoints = 256 # We need about 256 datapoints of padding in the final strain
-            zero_pad_seconds   = 256 / observatory.sample_rate
+            padding_datapoints  = 256 # Do 256 datapoints of padding wrt observatory sample rate
+            truncate_datapoints = 192 # Would remove 192 datapoints after resampling
+            zero_pad_seconds    = padding_datapoints / observatory.sample_rate
             strain.append_zeros (int(zero_pad_seconds * strain.sample_rate))
             strain.prepend_zeros(int(zero_pad_seconds * strain.sample_rate))
 
@@ -109,19 +120,19 @@ def project_waveform(
                     1.0/observatory.sample_rate, 
                     method='ldas'
                 )
-                ldas_strain = ldas_strain[corrupt_datapoints:-corrupt_datapoints]
+                ldas_strain = ldas_strain[truncate_datapoints:-truncate_datapoints]
                 ldas_strain.corrupted_samples = 0
-                projected_strains[detector_str] = ldas_strain
+                projected_strains[detector_str] = (ldas_strain, geocenter_td)
                     
             else :
                 # Otherwise, use polyphase resampling
                 polyphase_strain = resample_poly(strain_butterworth, up, down)
-                polyphase_strain = polyphase_strain[corrupt_datapoints:-corrupt_datapoints]
+                polyphase_strain = polyphase_strain[truncate_datapoints:-truncate_datapoints]
                 polyphase_strain = TimeSeries(
                     polyphase_strain, 
                     delta_t=1.0/observatory.sample_rate, 
                     epoch=sig_start_time
                 )
-                projected_strains[detector_str] = polyphase_strain
+                projected_strains[detector_str] = (polyphase_strain, geocenter_td)
 
     return projected_strains
