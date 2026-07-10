@@ -9,6 +9,8 @@ from astropy.time import Time
 from astropy import coordinates as coord
 from astropy import units as u
 
+from pycbc.types.timeseries import TimeSeries
+
 from ..constants import C_SI, AU_SI
 
 
@@ -17,10 +19,14 @@ class IndIGO_D :
     """
     Detector class for the Heliocentric configuration of the IndIGO-D detector.
     Duck-typed to be compatible with the `project_wave` method of PyCBC `Detector` class.
-    Assumes stationary detector. 
+    Assumes stationary detector and long wavelength approximation (LWA) for the projection.
     """
 
-    def __init__(self, name="IndIGO-D", orbit_tstart=0.0, L_SI=1e6) :
+    def __init__(self, 
+        name: str = "IndIGO-D", 
+        lead_offset: float = 20.0, 
+        L_SI: float = 1e6
+    ) -> None :
 
         """
         Create a new instance of the IndIGO-D detector.
@@ -29,54 +35,56 @@ class IndIGO_D :
         ----------
         name : str, optional
             The name of the detector. Default is "IndIGO-D".
-        orbit_tstart : float, optional
-            The start time of the orbit in GPS seconds. Default is 0.0.
+        lead_offset : float, optional
+            Angle by which the constellation leads earth in degrees. Default is 20.0.
         L_SI : float, optional
             The arm length of the detector in meters. Default is 1e6 (1e3 km).
         """
 
         self.name = name
-        self.orbit_tstart = orbit_tstart
+        self.lead_offset = lead_offset
         self.L_SI = L_SI
 
 
-    def get_sc_loc(self, gps_time) :
+    def _get_sc_loc(self, gps_time) :
 
         """
         Get the position of the 3 spacecrafts in heliocentric frame.
         """
 
-        time_val = gps_time + self.orbit_tstart
-        t_jyear  = Time(val=time_val, format='gps', scale='utc').jyear
-        
         a, L  = AU_SI, self.L_SI
         e_ecc = L / (2.0 * a)
         alpha = e_ecc
-        omega = 2 * pi / 1.0  # 1 year orbit
         epsilon = np.sqrt(3) * alpha
 
-        psi2 =  omega * t_jyear - e_ecc * sin(omega * t_jyear)
-        psi3 = (omega * t_jyear - pi/2) - e_ecc * sin(omega * t_jyear - pi/2)
+        earth_bary = coord.get_body_barycentric('earth', Time(gps_time, format='gps'))
+        earth_ecliptic = coord.SkyCoord(earth_bary, frame='icrs').barycentricmeanecliptic
+
+        earth_phi = earth_ecliptic.lon.rad 
+        phi_sc = earth_phi + np.radians(self.lead_offset)
+
+        psi2 = (phi_sc       ) - e_ecc * sin(phi_sc       )
+        psi3 = (phi_sc - pi/2) - e_ecc * sin(phi_sc - pi/2)
         
         # SC1 (Vertex)
-        x1 = a * cos(omega * t_jyear)
-        y1 = a * sin(omega * t_jyear)
-        z1 = np.zeros_like(t_jyear)
+        x1 = a * cos(phi_sc)
+        y1 = a * sin(phi_sc)
+        z1 = 0.0
         
         # SC2
-        x2 = a * (cos(psi2) + e_ecc) * cos(epsilon)
-        y2 = a * np.sqrt(1 - e_ecc**2) * sin(psi2)
-        z2 = a * (cos(psi2) + e_ecc) * sin(epsilon)
+        x2 = + a * (cos(psi2) + e_ecc) * cos(epsilon)
+        y2 = + a * np.sqrt(1 - e_ecc**2) * sin(psi2)
+        z2 = + a * (cos(psi2) + e_ecc) * sin(epsilon)
 
         # SC3
-        x3 = -a * np.sqrt(1 - e_ecc**2) * sin(psi3)
-        y3 = a * (cos(psi3) + e_ecc) * cos(epsilon)
-        z3 = a * (cos(psi3) + e_ecc) * sin(epsilon)
+        x3 = - a * np.sqrt(1 - e_ecc**2) * sin(psi3)
+        y3 = + a * (cos(psi3) + e_ecc) * cos(epsilon)
+        z3 = + a * (cos(psi3) + e_ecc) * sin(epsilon)
 
         return np.array([x1, y1, z1]), np.array([x2, y2, z2]), np.array([x3, y3, z3])
     
 
-    def reference_pol_tensors(self, longitude, latitude) :
+    def _reference_pol_tensors(self, longitude, latitude) :
 
         """
         Get the reference polarization tensors for a given source position in ecliptic coordinates.
@@ -90,18 +98,18 @@ class IndIGO_D :
         return e_plus, e_cross
 
 
-    def antenna_pattern(self, ra, dec, polarization, gps_time) :
+    def _antenna_pattern(self, ra, dec, polarization, gps_time) :
 
         """
         Get the Fp Fc for a given source position and polarization angle at a given time.
         """
 
         # Convert ICRS RA/Dec to Barycentric True Ecliptic
-        c = coord.SkyCoord(ra=ra*u.rad, dec=dec*u.rad, frame='icrs')
-        ecliptic = c.barycentrictrueecliptic
+        source_c = coord.SkyCoord(ra=ra*u.rad, dec=dec*u.rad, frame='icrs')
+        ecliptic = source_c.barycentricmeanecliptic
         lon, lat = ecliptic.lon.rad, ecliptic.lat.rad
         
-        sc1, sc2, sc3 = self.get_sc_loc(gps_time)
+        sc1, sc2, sc3 = self._get_sc_loc(gps_time)
 
         # Arm vectors
         link12 = (sc2 - sc1) / np.linalg.norm(sc2 - sc1)
@@ -110,46 +118,73 @@ class IndIGO_D :
         d12 = np.outer(link12, link12)
         d13 = np.outer(link13, link13)
 
-        e_plus, e_cross = self.reference_pol_tensors(lon, lat)
+        e_plus, e_cross = self._reference_pol_tensors(lon, lat)
 
         # Rotate to detector's polarization frame
         E_plus  = + cos(2*polarization)*e_plus + sin(2*polarization)*e_cross
         E_cross = - sin(2*polarization)*e_plus + cos(2*polarization)*e_cross
         
-        Fp = np.trace(np.dot(d12 - d13, E_plus))
-        Fc = np.trace(np.dot(d12 - d13, E_cross))
+        Fp = 0.5 * np.trace(np.dot(d12 - d13, E_plus))
+        Fc = 0.5 * np.trace(np.dot(d12 - d13, E_cross))
         
         return Fp, Fc
     
 
-    def time_delay_from_earth_center(self, ra, dec, gps_time) :
+    def time_delay_from_earth_center(
+        self, 
+        ra:float, 
+        dec:float, 
+        gps_time:float
+    ) -> float :
 
         """
         Time delay (in seconds) between geocenter and IndIGO-D vertex.
+
+        Parameters
+        ----------
+        ra : float
+            Right Ascension of the source in radians.
+        dec : float
+            Declination of the source in radians.
+        gps_time : float
+            GPS time at which to compute the time delay.
+
+        Returns
+        -------
+        float
+            Time delay in seconds between geocenter and IndIGO-D vertex.
         """
 
-        c = coord.SkyCoord(ra=ra*u.rad, dec=dec*u.rad, frame='icrs')
-        ecliptic = c.barycentrictrueecliptic
+        source_c = coord.SkyCoord(ra=ra*u.rad, dec=dec*u.rad, frame='icrs')
+        ecliptic = source_c.barycentricmeanecliptic
         lon, lat = ecliptic.lon.rad, ecliptic.lat.rad
         
         # GW propagation direction
         k_hat = np.array([-cos(lon)*cos(lat), -sin(lon)*cos(lat), -sin(lat)])
         
         # Earth's position (barycentric frame)
-        earth_pos = coord.get_body_barycentric('earth', Time(gps_time, format='gps'))
-        r_earth = np.array([earth_pos.x.to('m').value, 
-                            earth_pos.y.to('m').value, 
-                            earth_pos.z.to('m').value])
-        
+        earth_bary = coord.get_body_barycentric('earth', Time(gps_time, format='gps'))
+        earth_ecliptic = coord.SkyCoord(earth_bary, frame='icrs').barycentricmeanecliptic
+        r_earth = np.array([earth_ecliptic.cartesian.x.to('m').value,
+                            earth_ecliptic.cartesian.y.to('m').value,
+                            earth_ecliptic.cartesian.z.to('m').value])
+
         # Detector position
-        r_det, _, _ = self.get_sc_loc(gps_time)
+        r_det, _, _ = self._get_sc_loc(gps_time)
         
         # Project baseline onto k_hat
         dt = np.dot(r_det - r_earth, k_hat) / C_SI
         return dt
 
 
-    def project_wave(self, hp, hc, ra, dec, polarization) :
+    def project_wave(
+        self, 
+        hp: TimeSeries, 
+        hc: TimeSeries, 
+        ra: float, 
+        dec: float, 
+        polarization: float
+    ) -> TimeSeries :
 
         """
         Project hp hc onto the detector to get strain.
@@ -178,7 +213,7 @@ class IndIGO_D :
         t_eval = float(hp.end_time)
         
         # Get antenna patterns
-        Fp, Fc = self.antenna_pattern(ra, dec, polarization, t_eval)
+        Fp, Fc = self._antenna_pattern(ra, dec, polarization, t_eval)
         
         # Project the time series
         strain = hp * Fp + hc * Fc
