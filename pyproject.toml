@@ -18,6 +18,7 @@ dependencies = [
     # Data handling
     "pandas",
     "h5py",
+    "tables",
 
     # Astrophysics
     "pycbc",
