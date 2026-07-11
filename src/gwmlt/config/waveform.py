@@ -39,11 +39,3 @@ class WaveformConfig :
     Changing this has no effect on non-precessing systems beyond phase shifts.
     Default global value is 20.0 Hz, following Bilby values.
     """
-
-    td_wf_gen_srate : int = 4096
-    """
-    The frequency (in Hz) for time-domain waveform generation.
-    All time-domain waveforms are generated at this sample rate 
-    and then downsampled to the requested sample rate.
-    Default global value is 4096 Hz.
-    """

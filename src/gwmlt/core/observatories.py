@@ -22,6 +22,7 @@ class LVK :
     ----------
     noise_psds : list of str or Path or None
         Target noise psd tag (e.g., [None, 'O4_gaus'] etc.)
+        If Path, it should point to a npz file with 'freq' and 'psd' arrays.
     ifo_list : list of str, or None, optional
         Target interferometers (e.g., ['H1', 'L1'] etc.).
         Default is None.
@@ -30,8 +31,12 @@ class LVK :
         Sets reference frequency for waveform generation.
         Default is 20.0
     sample_rate : float, optional
-        Sampling rate of the data (in Hz).
+        Sampling rate of the timeseries data (in Hz).
         Sets upper bound of frequency range for all analysis at the Nyquist frequency.
+        Default is 4096.0
+    wf_gen_srate : float, optional
+        Internal sampling rate for the TD waveform generation (in Hz).
+        Should be kept at sample_rate for ground-based detectors.
         Default is 4096.0
 
     Attributes
@@ -46,10 +51,11 @@ class LVK :
     Otherwise, `noise_psds` and `ifo_list` must be broadcastable to a common shape.
     """
 
-    noise_psds  : list[str | Path | None]
-    ifo_list    : list[str] | None = None
-    f_low       : float = 20.0
-    sample_rate : float = 4096.0
+    noise_psds   : list[str | Path | None]
+    ifo_list     : list[str] | None = None
+    f_low        : float = 20.0
+    sample_rate  : float = 4096.0
+    wf_gen_srate : float = 4096.0
 
     resolved_paths : dict[str, Path] = field(default_factory=dict, init=False, repr=True)
 
@@ -74,6 +80,7 @@ class Decihertz :
         Duration of the waveform (in seconds).
     noise_psds : list of str or Path or None
         Target noise psd tag (e.g., ['S1_gaus'] etc.)
+        If Path, it should point to a npz file with 'freq' and 'psd' arrays.
     ifo_list : list of str, or None, optional
         Target interferometers (e.g., ['IndIGO-D'] etc.).
         Default is None.
@@ -84,9 +91,14 @@ class Decihertz :
         Lower bound of frequency range for all analysis (in Hz).
         Default is 1.0
     sample_rate : float, optional
-        Sampling rate of the data (in Hz).
+        Sampling rate of the timeseries data (in Hz).
         Sets upper bound of frequency range for all analysis at the Nyquist frequency.
         Default is 20.0
+    wf_gen_srate : float, optional
+        Internal sampling rate for the TD waveform generation (in Hz).
+        Should be a power-of-two multiple of the sample_rate for butterworth downsampling.
+        This is necessary to prevent aliasing artifacts in the projected strain.
+        Default is 2560.0
 
     Attributes
     ----------
@@ -100,12 +112,13 @@ class Decihertz :
     Otherwise, `noise_psds` and `ifo_list` must be broadcastable to a common shape.
     """
 
-    wf_duration : float
-    noise_psds  : list[str | Path | None]
-    ifo_list    : list[str] | None = None
-    ecc_f_ref   : float = 20.0
-    f_low       : float = 1.00
-    sample_rate : float = 20.0
+    wf_duration  : float
+    noise_psds   : list[str | Path | None]
+    ifo_list     : list[str] | None = None
+    ecc_f_ref    : float = 20.0
+    f_low        : float = 1.00
+    sample_rate  : float = 20.0
+    wf_gen_srate : float = 2560.0
 
     resolved_paths : dict[str, Path] = field(default_factory=dict, init=False, repr=True)
 

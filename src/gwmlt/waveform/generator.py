@@ -156,7 +156,7 @@ def _get_pars(
 
     waveform_params = {
         "approximant" : morphology.wf_approximant,
-        "delta_t"     : 1.0 / config.waveform.td_wf_gen_srate,
+        "delta_t"     : 1.0 / observatory.wf_gen_srate,
     }
 
     if morphology.wf_approximant == "IMRPhenomXO4a" :

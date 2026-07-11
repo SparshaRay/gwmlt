@@ -6,7 +6,6 @@ import numpy as np
 from pycbc.types.timeseries import TimeSeries
 
 from ..core.morphologies import Lensed
-from ..config import config
 from .pointlens import Ff_hybrid, time_delay
 
 
@@ -43,7 +42,7 @@ def apply_lensing(
 
     td = time_delay(ml, y, zl)
 
-    td_pad = int(td * config.waveform.td_wf_gen_srate)
+    td_pad = int(td * hp.sample_rate)
     wf_len = len(hp)
     ev_pad = (wf_len + td_pad) % 2
 
