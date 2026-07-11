@@ -139,6 +139,7 @@ class IndIGO_D :
 
         """
         Time delay (in seconds) between geocenter and IndIGO-D vertex.
+        The maximum possible time delay is ~ 173 seconds.
 
         Parameters
         ----------
