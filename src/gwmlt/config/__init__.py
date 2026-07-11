@@ -33,7 +33,8 @@ config = GlobalConfig()
 
 # Context manager to temporarily override global configuration variables
 @contextmanager
-def config_override(overrides: dict[str, Any]) -> Generator[GlobalConfig, None, None]:
+def config_override(overrides: dict[str, Any]) -> Generator[GlobalConfig, None, None] :
+
     """
     Temporarily override global configuration variables.
     Accepts a dictionary of keys as strings with the desired values.
@@ -60,7 +61,7 @@ def config_override(overrides: dict[str, Any]) -> Generator[GlobalConfig, None, 
                 
             attr_name = parts[-1]
             if not hasattr(target_obj, attr_name) :
-                raise AttributeError(f"Configuration has no attribute '{dot_path}'")
+                raise AttributeError(f"GlobalConfig has no attribute '{dot_path}'")
                 
             old_values.append((target_obj, attr_name, getattr(target_obj, attr_name)))
             object.__setattr__(target_obj, attr_name, new_value)
@@ -72,6 +73,7 @@ def config_override(overrides: dict[str, Any]) -> Generator[GlobalConfig, None, 
             object.__setattr__(target_obj, attr_name, old_value)
 
 
+# Expose
 __all__ = [
     "config", 
     "GlobalConfig", 

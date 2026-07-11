@@ -151,8 +151,8 @@ def _resolve_paths(noise_psds: list[str | Path | None], ifo_list: list[str]) -> 
 
     # Wrap single values in lists for user convenience, because python does not care about type hints anyways
     # Bad practice, but oh well, saves a second
-    noise_psds = noise_psds if isinstance(noise_psds, list) else [noise_psds]
-    available_ifos = ifo_list if isinstance(ifo_list,    list) else [ifo_list   ]
+    noise_psds     = noise_psds if isinstance(noise_psds, list) else [noise_psds]
+    available_ifos = ifo_list   if isinstance(ifo_list,   list) else [ifo_list  ]
 
     default_noise_psds = config.noise.noise_psds
 

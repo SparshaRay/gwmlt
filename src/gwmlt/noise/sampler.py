@@ -3,15 +3,14 @@ Generate Noise Time Series and Corresponding PSDs
 """
 
 import h5py
-import pandas as pd
 import numpy as np
+import pandas as pd
+from pathlib import Path
 
 from pycbc.types.timeseries import TimeSeries
 from pycbc.types.frequencyseries import FrequencySeries
 from pycbc.psd import read, interpolate, inverse_spectrum_truncation
 from pycbc.noise.reproduceable import colored_noise
-
-from pathlib import Path
 from lal import LIGOTimeGPS
 
 
