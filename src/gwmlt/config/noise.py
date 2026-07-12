@@ -1,3 +1,7 @@
+"""
+PSD and Real Noise File Paths
+"""
+
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -6,7 +10,7 @@ from .base import NOISE_DATA_DIR
 @dataclass(frozen=True)
 class NoiseConfig :
     """
-    Configuration for noise data and PSDs.
+    Configurations for noise data and PSDs.
     """
 
     data_dir : Path = NOISE_DATA_DIR

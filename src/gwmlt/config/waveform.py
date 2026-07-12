@@ -1,9 +1,13 @@
+"""
+Waveform Generation Configurations
+"""
+
 from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class WaveformConfig :
     """
-    Configuration for waveform generation.
+    Configurations for waveform generation.
     """
 
     imrphenomx_modes : list[tuple[int, int]] | None = None
