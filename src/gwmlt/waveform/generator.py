@@ -44,8 +44,15 @@ def generate_waveform(
     pars = _get_pars(source, morphology, observatory, **user_override_kwargs)
     hp, hc = get_td_waveform(**pars)
 
-    hp = hp.taper_timeseries(location='TAPER_STARTEND')
-    hc = hc.taper_timeseries(location='TAPER_STARTEND')
+    hp = hp.taper_timeseries(location='TAPER_START')
+    hc = hc.taper_timeseries(location='TAPER_START')
+
+    # Pad the waveform with zeros
+    # This is not necessary but makes it clearer to see in plots
+    hp.append_zeros(64)
+    hc.append_zeros(64)
+    hp.prepend_zeros(64)
+    hc.prepend_zeros(64)
 
     hp.start_time += source.geocent_time
     hc.start_time += source.geocent_time

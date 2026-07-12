@@ -102,6 +102,7 @@ def project_waveform(
             try :
                 butterworth_strain = resample_to_delta_t(strain, 1.0/observatory.sample_rate, method='butterworth')
                 butterworth_strain = butterworth_strain[truncate_datapoints:-truncate_datapoints]
+                butterworth_strain.corrupted_samples = 0
                 projected_strains[detector_str] = (butterworth_strain, geocenter_td)
 
             except Exception as e :
