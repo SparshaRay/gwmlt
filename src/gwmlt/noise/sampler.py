@@ -60,25 +60,28 @@ def sample_gaussian_noise(
     length = int(sample_rate / (2 * delta_f)) + 1
 
     psd = read.from_numpy_arrays(
-        freq_data = freq,
-        noise_data = psd,
-        length = length,
-        delta_f = delta_f,
-        low_freq_cutoff = f_low
+        freq_data=freq,
+        noise_data=psd,
+        length=length,
+        delta_f=delta_f,
+        low_freq_cutoff=f_low
     )
 
-    # Replace the zeros with a very small values to avoid division by zero
-    psd += 1e-52
+    # Flat out below f_low to avoid interpolation artifacts downstream
+    cutoff_idx = (psd!=0.0).argmax()
+    psd[:cutoff_idx] = psd[cutoff_idx]
 
+    # We have to generate a longer time segment and crop it down because PyCBC applies
+    # an integer cast in colored_noise that sometimes throws off-by-one errors.
     ts = colored_noise(
         psd,
-        start_time=start_time,
-        end_time=end_time,
+        start_time=np.floor(start_time),
+        end_time=np.ceil(end_time),
         seed=seed,
         sample_rate=sample_rate,
         low_frequency_cutoff=f_low,
         filter_duration=4.0
-    )
+    ).time_slice(start_time, end_time)
 
     return ts, psd
 
