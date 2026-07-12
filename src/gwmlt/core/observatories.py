@@ -10,7 +10,7 @@ import numpy as np
 from ..config import config
 
 
-# Interferometer Network Configurations -----------------------------------------------------------
+# Detector Network Configurations -----------------------------------------------------------------
 
 @dataclass(frozen=True)
 class LVK :
@@ -23,8 +23,8 @@ class LVK :
     noise_psds : list of str or Path or None
         Target noise psd tag (e.g., [None, 'O4_gaus'] etc.)
         If Path, it should point to a npz file with 'freq' and 'psd' arrays.
-    ifo_list : list of str, or None, optional
-        Target interferometers (e.g., ['H1', 'L1'] etc.).
+    detector_list : list of str, or None, optional
+        Target detectors (e.g., ['H1', 'L1'] etc.).
         Default is None.
     f_low : float, optional
         Lower bound of frequency range for all analysis (in Hz).
@@ -47,12 +47,12 @@ class LVK :
 
     Note
     ----
-    If `ifo_list` is None, it defaults to all interferometers available for the specified noise psd.
-    Otherwise, `noise_psds` and `ifo_list` must be broadcastable to a common shape.
+    If `detector_list` is None, it defaults to all detectors available for the specified noise psd.
+    Otherwise, `noise_psds` and `detector_list` must be broadcastable to a common shape.
     """
 
     noise_psds   : list[str | Path | None]
-    ifo_list     : list[str] | None = None
+    detector_list     : list[str] | None = None
     f_low        : float = 20.0
     sample_rate  : float = 4096.0
     wf_gen_srate : float = 4096.0
@@ -60,11 +60,11 @@ class LVK :
     resolved_paths : dict[str, Path] = field(default_factory=dict, init=False, repr=True)
 
     def __post_init__(self) :
-        paths_map = _resolve_paths(self.noise_psds, self.ifo_list)
+        paths_map = _resolve_paths(self.noise_psds, self.detector_list)
         object.__setattr__(self, "resolved_paths", paths_map)
 
     @property
-    def active_ifos(self) -> list[str] :
+    def active_detectors(self) -> list[str] :
         return list(self.resolved_paths.keys())
 
 
@@ -81,8 +81,8 @@ class Decihertz :
     noise_psds : list of str or Path or None
         Target noise psd tag (e.g., ['S1_gaus'] etc.)
         If Path, it should point to a npz file with 'freq' and 'psd' arrays.
-    ifo_list : list of str, or None, optional
-        Target interferometers (e.g., ['IndIGO-D'] etc.).
+    detector_list : list of str, or None, optional
+        Target detectors (e.g., ['IndIGO-D'] etc.).
         Default is None.
     ecc_f_ref : float, optional
         Reference frequency for eccentricity.
@@ -108,13 +108,13 @@ class Decihertz :
 
     Note
     ----
-    If `ifo_list` is None, it defaults to all interferometers available for the specified noise psd.
-    Otherwise, `noise_psds` and `ifo_list` must be broadcastable to a common shape.
+    If `detector_list` is None, it defaults to all detectors available for the specified noise psd.
+    Otherwise, `noise_psds` and `detector_list` must be broadcastable to a common shape.
     """
 
     wf_duration  : float
     noise_psds   : list[str | Path | None]
-    ifo_list     : list[str] | None = None
+    detector_list     : list[str] | None = None
     ecc_f_ref    : float = 20.0
     f_low        : float = 1.00
     sample_rate  : float = 20.0
@@ -123,87 +123,87 @@ class Decihertz :
     resolved_paths : dict[str, Path] = field(default_factory=dict, init=False, repr=True)
 
     def __post_init__(self) :
-        paths_map = _resolve_paths(self.noise_psds, self.ifo_list)
+        paths_map = _resolve_paths(self.noise_psds, self.detector_list)
         object.__setattr__(self, "resolved_paths", paths_map)
 
     @property
-    def active_ifos(self) -> list[str] :
+    def active_detectors(self) -> list[str] :
         return list(self.resolved_paths.keys())
 
 
-# Helper function to resolve noise psd paths for given interferometers ----------------------------
+# Helper function to resolve noise psd paths for given detectors ----------------------------------
 
-def _resolve_paths(noise_psds: list[str | Path | None], ifo_list: list[str]) -> dict[str, Path] :
+def _resolve_paths(noise_psds: list[str | Path | None], detector_list: list[str]) -> dict[str, Path] :
 
     """
-    Resolve the noise psd paths for the given interferometers.
+    Resolve the noise psd paths for the given detectors.
 
     Parameters
     ----------
     noise_psds : list of str or Path or None
-    ifo_list : list of str, or None
+    detector_list : list of str, or None
 
     Returns
     -------
     dict
-        A map of interferometer names to their resolved noise file paths.
+        A map of detector names to their resolved noise file paths.
     """
 
     # Wrap single values in lists for user convenience, because python does not care about type hints anyways
     # Bad practice, but oh well, saves a second
     noise_psds     = noise_psds if isinstance(noise_psds, list) else [noise_psds]
-    available_ifos = ifo_list   if isinstance(ifo_list,   list) else [ifo_list  ]
+    available_detectors = detector_list   if isinstance(detector_list,   list) else [detector_list  ]
 
     default_noise_psds = config.noise.noise_psds
 
-    # Handle the case when ifo_list is None, defaults to all ifos available in the specified noise psd
-    if available_ifos == [None] :
+    # Handle the case when detector_list is None, defaults to all detectors available in the specified noise psd
+    if available_detectors == [None] :
         if (len(noise_psds) == 1) and (noise_psds[0] in default_noise_psds) :
-            available_ifos = list(default_noise_psds[noise_psds[0]].keys())
+            available_detectors = list(default_noise_psds[noise_psds[0]].keys())
         else :
             raise ValueError(
-                "When `ifo_list` is None, `noise_psds` must be exactly one single built-in tag.\n"
+                "When `detector_list` is None, `noise_psds` must be exactly one single built-in tag.\n"
                 f"Provided: {noise_psds}\n"
                 f"Available tags: {list(default_noise_psds.keys())}"
             )
     
     # Get all path maps
     try :
-        kv_pairs = np.array(np.broadcast_arrays(available_ifos, noise_psds)).T
+        kv_pairs = np.array(np.broadcast_arrays(available_detectors, noise_psds)).T
     except ValueError as e :
         raise ValueError(
-            f"Failed to match noise psds to interferometers due to a shape mismatch.\n"
+            f"Failed to match noise psds to detectors due to a shape mismatch.\n"
             f"Could not broadcast shapes: psds shape {np.shape(noise_psds)} "
-            f"with IFO list shape {np.shape(available_ifos)}.\n"
+            f"with detector list shape {np.shape(available_detectors)}.\n"
             f"Ensure lengths match or one sequence has a length of 1."
         ) from e
 
     paths_map = {}
-    for ifo, noise_psd in kv_pairs :
+    for detector, noise_psd in kv_pairs :
 
-        ifo = str(ifo)
-        if ifo in paths_map :
-            raise ValueError(f"Ambiguous configuration : multiple noise psds assigned to interferometer '{ifo}'.")
+        detector = str(detector)
+        if detector in paths_map :
+            raise ValueError(f"Ambiguous configuration : multiple noise psds assigned to detector '{detector}'.")
 
         if noise_psd is None :
-            paths_map[ifo] = None
+            paths_map[detector] = None
         elif noise_psd in default_noise_psds :
-            if ifo in default_noise_psds[noise_psd] :
-                paths_map[ifo] = default_noise_psds[noise_psd][ifo]
+            if detector in default_noise_psds[noise_psd] :
+                paths_map[detector] = default_noise_psds[noise_psd][detector]
             else :
                 raise ValueError(
-                    f"Interferometer '{ifo}' does not have a noise psd defined under tag '{noise_psd}'.\n"
-                    f"Available interferometers for '{noise_psd}': {list(default_noise_psds[noise_psd].keys())}"
+                    f"detector '{detector}' does not have a noise psd defined under tag '{noise_psd}'.\n"
+                    f"Available detectors for '{noise_psd}': {list(default_noise_psds[noise_psd].keys())}"
                 )
         elif Path(noise_psd).is_file() :
-            paths_map[ifo] = Path(noise_psd)
+            paths_map[detector] = Path(noise_psd)
         else :
             db_summary = "\n".join(
-                f"  - '{tag}': {list(ifos.keys())}" for tag, ifos in default_noise_psds.items()
+                f"  - '{tag}': {list(detectors.keys())}" for tag, detectors in default_noise_psds.items()
             )
             raise ValueError(
                 f"Invalid noise psd: '{noise_psd}'. Must be an existing file path, None, or a valid built-in tag.\n"
-                f"Available built-in options (tag: [supported ifos]):\n"
+                f"Available built-in options (tag: [supported detectors]):\n"
                 f"{db_summary}"
             )
     

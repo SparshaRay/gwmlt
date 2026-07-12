@@ -51,7 +51,7 @@ def project_waveform(
     projected_strains = {}
     pycbc_detectors = get_available_detectors()
     
-    for detector_str in observatory.active_ifos :
+    for detector_str in observatory.active_detectors :
         
         # Check if the detector is available in PyCBC or is a custom Decihertz detector
         if detector_str in pycbc_detectors :
