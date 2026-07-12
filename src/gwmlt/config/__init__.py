@@ -10,6 +10,7 @@ from pathlib import Path
 from .base import PROJECT_ROOT
 from .noise import NoiseConfig
 from .waveform import WaveformConfig
+from .injection import InjectionConfig
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,9 @@ class GlobalConfig :
     
     noise: NoiseConfig = field(default_factory=NoiseConfig)
     """Configuration for noise data and PSDs"""
+
+    injection: InjectionConfig = field(default_factory=InjectionConfig)
+    """Configuration for injection timeseries"""
     
     project_root: Path = PROJECT_ROOT
     """
