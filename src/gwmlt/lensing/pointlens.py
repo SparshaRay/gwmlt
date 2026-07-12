@@ -82,7 +82,7 @@ def time_delay(
     return (4 * G_SI * MSUN_SI * ml * (1 + zl) / C_SI**3) * _time_delay_dimensionless(y)
 
 # Primary time delay user entry point function
-def get_time_delay(morphology: Lensed) -> float :
+def lensing_time_delay(morphology: Lensed) -> float :
     """
     Returns the time-delay between the two micro-images for a given lensing morphology.
 
