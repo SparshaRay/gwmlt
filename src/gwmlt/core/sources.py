@@ -159,7 +159,7 @@ class BBHSystem :
 
     def __post_init__(self) -> None :
 
-        if isinstance(self.geocent_time, float) :
+        if not isinstance(self.geocent_time, LIGOTimeGPS) :
             object.__setattr__(self, "geocent_time", LIGOTimeGPS(self.geocent_time))
 
         if self.spins is None :

@@ -65,7 +65,7 @@ def project_waveform(
         
         # Project the waveform onto the detector
         strain = det.project_wave(hp, hc, source.ra, source.dec, source.psi)
-        geocenter_td = det.time_delay_from_earth_center(source.ra, source.dec, source.geocent_time)
+        geocenter_td = det.time_delay_from_earth_center(source.ra, source.dec, float(source.geocent_time))
         
         # If the strain is already at the desired sampling rate, no resampling is needed
         if strain.sample_rate == observatory.sample_rate : projected_strains[detector_str] = (strain, geocenter_td)
