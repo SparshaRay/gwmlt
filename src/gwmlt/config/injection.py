@@ -53,9 +53,9 @@ class InjectionConfig :
         # All ground based detectors have a maximum geocenter to interferometer time delay of 21.3 ms.
         **{detector: 0.0213 for detector in get_available_detectors()},
         # Heliocentric IndIGO-D has a maximum geocenter to interferometer time delay of around 175 seconds.
-        **{'IndIGO-D' : 175}
+        **{'IndIGO-D' : 175},
         # If None then no padding will be applied.
-        **{None : 0.0}
+        **{None : 0.0},
     })
     """
     Dictionary containing maximum possible time delays from geocenter to each interferometer (in seconds).
