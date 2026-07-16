@@ -119,7 +119,7 @@ def _get_pars(
     initial_conditions = {}
 
     if observatory is None :
-        warn('Observatory is set to None. Setting f_lower to 20 Hz for waveform generation. '
+        warn('Observatory is set to None. Setting f_lower to 20 Hz for waveform generation.\n'
              'You can override this and other parameters by passing them as keyword arguments')
         initial_conditions["f_lower"] = 20.0
         if morphology.wf_approximant == "teobresums" :
@@ -172,7 +172,7 @@ def _get_pars(
             waveform_params["f_ref"] = config.waveform.f_ref
         else :
             warn(
-                f"f_lower ({initial_conditions['f_lower']} Hz) is greater than default f_ref ({config.waveform.f_ref} Hz). "
+                f"f_lower ({initial_conditions['f_lower']} Hz) is greater than default f_ref ({config.waveform.f_ref} Hz).\n"
                 "Setting f_ref = f_lower for IMRPhenomXO4a waveform generation."
             )
             waveform_params["f_ref"] = initial_conditions["f_lower"]
