@@ -167,13 +167,13 @@ class BBHSystem :
             object.__setattr__(self, "l_frame", self.LFrameSpins())
 
         elif isinstance(self.spins, self.JFrameSpins) :
-            from ..utils.physics import _convert_jframe_to_lframe
+            from ..utils.general import _convert_jframe_to_lframe
             l_struct = _convert_jframe_to_lframe(self.mass_1, self.mass_2, self.spins)
             object.__setattr__(self, "j_frame", self.spins)
             object.__setattr__(self, "l_frame", l_struct)
 
         elif isinstance(self.spins, self.LFrameSpins) :
-            from ..utils.physics import _convert_lframe_to_jframe
+            from ..utils.general import _convert_lframe_to_jframe
             j_struct = _convert_lframe_to_jframe(self.mass_1, self.mass_2, self.spins)
             object.__setattr__(self, "j_frame", j_struct)
             object.__setattr__(self, "l_frame", self.spins)
