@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from typing import Any, Generator
 from pathlib import Path
 
-from .base import PROJECT_ROOT
+from .base import PROJECT_ROOT, TEOBRESUMS_FITS
 from .noise import NoiseConfig
 from .waveform import WaveformConfig
 from .injection import InjectionConfig
@@ -23,6 +23,9 @@ class GlobalConfig :
 
     injection: InjectionConfig = field(default_factory=InjectionConfig)
     """Configuration for injection timeseries"""
+
+    teobresums_fits_path: Path = TEOBRESUMS_FITS
+    """Path to the TEOBResumS evolution fits file."""
     
     project_root: Path = PROJECT_ROOT
     """
