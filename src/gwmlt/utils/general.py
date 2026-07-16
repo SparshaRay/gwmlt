@@ -16,7 +16,7 @@ from ..core.sources import BBHSystem
 # L and J frame interconversion functions ---------------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-def _convert_jframe_to_lframe(
+def convert_jframe_to_lframe(
         mass_1 : float, mass_2 : float,
         spins_jframe : BBHSystem.JFrameSpins,
         f_ref   : float = config.waveform.f_ref,
@@ -73,7 +73,7 @@ def _convert_jframe_to_lframe(
     )
 
 
-def _convert_lframe_to_jframe(
+def convert_lframe_to_jframe(
         mass_1 : float, mass_2 : float,
         spins_lframe : BBHSystem.LFrameSpins,
         f_ref   : float = config.waveform.f_ref,
