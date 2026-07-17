@@ -8,6 +8,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.optimize import root_scalar
 
+from .general import DimfulToDimless, DimlessToDimful
 from .teobresums import (log_f_peri_bar_interpolator, 
                          log_f_apos_bar_interpolator, 
                          log_f_orbavg_bar_interpolator, 
@@ -533,3 +534,74 @@ def teobresumsfits_initial_conditions(
     except ValueError as e : raise ValueError(f"Initial conditions failed: {e}")
 
     return ecc_start, log_f_start_bar
+
+
+def teobresumsfits_generalized_initconds(
+    mass_1 : float,
+    mass_2 : float,
+    chi1z  : float,
+    chi2z  : float,
+    ecc_ref : float,
+    f_ref   : float,
+    waveform_duration : float,
+    extrapolate : bool = False
+) -> tuple[float, float] :
+    
+    """
+    Get the starting eccentricity (ecc_start) and starting frequency (f_start)
+    for TEOBResumS waveform generation.
+
+    Parameters
+    ----------
+    mass_1 : float
+        Mass of the primary in solar masses.
+    mass_2 : float
+        Mass of the secondary in solar masses.
+    chi1z : float
+        Dimensionless spin of the primary along the orbital angular momentum.
+    chi2z : float
+        Dimensionless spin of the secondary along the orbital angular momentum.
+    ecc_ref : float
+        Reference eccentricity at the reference frequency.
+    f_ref : float
+        Reference frequency in Hz at which the reference eccentricity is defined.
+    waveform_duration : float
+        Duration of the waveform in seconds.
+    extrapolate : bool, optional
+        Whether to allow extrapolation outside the training data range.
+        If you get "initial conditions failed" errors, try setting this to True.
+        Setting this to True may lead to inaccurate results. Default is False.
+    
+    Returns
+    -------
+    tuple[float, float]
+        Tuple containing the starting eccentricity (ecc_start) and 
+        starting frequency (f_start) in Hz for TEOBResumS.
+    """
+
+    eta     = (mass_1 * mass_2) / ((mass_1 + mass_2)**2)
+    chi_eff = (mass_1*chi1z + mass_2*chi2z) / (mass_1 + mass_2)
+
+    to_dimensionless = DimfulToDimless(mass_1, mass_2)
+    f_ref_bar = to_dimensionless.get_dimless_frequency(f_ref)
+    sig_tau   = to_dimensionless.get_dimless_time(waveform_duration)
+
+    # Account for signal duration scaling with symmetric mass ratio
+    calibrated_sig_tau = sig_tau * (4 * eta) 
+
+    log_sig_tau   = np.log10(calibrated_sig_tau)
+    log_f_ref_bar = np.log10(f_ref_bar)
+
+    ecc_start, log_f_start_bar = teobresumsfits_initial_conditions(
+        log_sig_tau=log_sig_tau,
+        chi_eff=chi_eff,
+        ecc_ref=ecc_ref,
+        log_f_ref_bar=log_f_ref_bar,
+        extrapolate=extrapolate
+    )
+
+    to_physical = DimlessToDimful(mass_1 + mass_2)
+    f_start_bar = 10 ** log_f_start_bar
+    f_start     = to_physical.get_dimful_frequency(f_start_bar)
+
+    return ecc_start, f_start
