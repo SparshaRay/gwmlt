@@ -1,3 +1,4 @@
 # Enormous files, ignore everything here
-# Reach out to anupreeta@iucaa.in or sparsharay@gmail.com if you need these files
+# Reach out to anupreeta@iucaa.in or sparsharay@gmail.com if you need these real noise databases
+# Verify the "description" attribute of the "timeseries" group
 *.hdf5
