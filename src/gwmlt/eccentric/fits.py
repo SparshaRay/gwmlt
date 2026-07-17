@@ -1,15 +1,8 @@
 """
-Various Functions Related to Eccentric Systems
+Tools and Functions Related to Phenomenological Fits of TEOBResumS Evolutions
 """
 
 # [NOTE] :
-#
-# Throughout this file, the "bar" suffix denotes dimensionless quantities.
-#
-# Except for the `ecc_from_envelop_freqs` and `teobresumsfits_generalized_initconds` functions
-# the rest of the functions are exclusively dimensionless. To get dimensionless quantities from
-# physical quantities, use the conversion classes in `.general.py`.
-#
 # All the teobresumsfits functions except the `teobresumsfits_generalized_initconds` function
 # operate with the dimensionless time and frequency in logarithmic (base 10) scale.
 
@@ -17,343 +10,223 @@ Various Functions Related to Eccentric Systems
 import warnings
 
 import numpy as np
-from scipy.integrate import solve_ivp
+from scipy.interpolate import RBFInterpolator
 from scipy.optimize import root_scalar
 
-from .general import DimfulToDimless, DimlessToDimful
-from .teobresums import (log_f_peri_bar_interpolator, 
-                         log_f_apos_bar_interpolator, 
-                         log_f_orbavg_bar_interpolator, 
-                         log_f_calib_bar_interpolator)
+from ..config import config
+from ..utils.physics import DimfulToDimless, DimlessToDimful
+from .analytic import ecc_from_envelop_freqs
 
 
-# General Functions -------------------------------------------------------------------------------
-# -------------------------------------------------------------------------------------------------
+# The Interpolator Class --------------------------------------------------------------------------
 
-def ecc_from_envelop_freqs(
-    f_apos : float | np.ndarray, 
-    f_peri : float | np.ndarray
-) -> float | np.ndarray :
+class AnisotropicTEFPhenom :
     
-    """
-    Get eccentricity from apocenter and pericenter frequencies.\n
-    ref: https://arxiv.org/pdf/2302.11257 (Eq. 4 to 9)
+    def __init__(
+        self, 
+        x_vals : np.ndarray, 
+        y_vals : np.ndarray, 
+        z_vals : np.ndarray, 
+        fit_vals : np.ndarray,
+        smoothing : float = 0.025, 
+        neighbors : int = 256,
+        poly_interp_low : float = np.log10(5e2),
+        poly_interp_high : float | None = None
+    ) -> None :
 
-    Parameters
-    ----------
-    f_apos : float | np.ndarray
-        Apocenter frequencies.
-    f_peri : float | np.ndarray
-        Pericenter frequencies.
-    
-    Returns
-    -------
-    float | np.ndarray
-        Eccentricity corresponding to the given apocenter and pericenter frequencies.
+        """
+        Initialize an anisotropic R3 -> R1 RBF interpolator for TEF.
 
-    Note
-    ----
-    The function can handle both scalar and array inputs for f_apos and f_peri.
-    The output will be a scalar if the inputs are scalars, and an array if the 
-    inputs are arrays of the same shape. The frequencies may both be dimensionless or physical.
-    """
+        Parameters
+        ----------
+        x_vals : array-like
+            The 1st dimension coordinates of the data points.
+        y_vals : array-like
+            The 2nd dimension coordinates of the data points.
+        z_vals : array-like
+            The 3rd dimension coordinates of the data points.
+        fit_vals : array-like
+            The values to be interpolated at the training data points.
+        smoothing : float, optional
+            Smoothing parameter for the RBF interpolator. Default is 0.025.
+        neighbors : int, optional
+            Number of nearest neighbors to use for interpolation. Default is 256.
+        poly_interp_low : float, optional
+            The lower bound for datapoint polynomial interpolation. Default is np.log10(5e2).
+        poly_interp_high : float | None, optional
+            The upper bound for polynomial interpolation. If None, the query x_val is used.
+            Default is None.
+        """
 
-    f_apos = np.asarray(f_apos)
-    f_peri = np.asarray(f_peri)
+        self.poly_interp_low  = poly_interp_low
+        self.poly_interp_high = poly_interp_high
 
-    assert f_apos.shape == f_peri.shape, "Input arrays must have the same shape."
-    
-    ecc = np.zeros_like(f_apos, dtype=float)
-    valid_mask = f_peri > f_apos
-    
-    f_a = f_apos[valid_mask]
-    f_p = f_peri[valid_mask]
-    
-    if np.any(valid_mask) :
-
-        sqrt_p = np.sqrt(f_p)
-        sqrt_a = np.sqrt(f_a)
+        assert x_vals.shape[:3] == y_vals.shape[:3] == z_vals.shape[:3] == fit_vals.shape[:3], \
+            "Input arrays must have the same shape in the first three dimensions."
         
-        ecc_omg22 = (sqrt_p - sqrt_a) / (sqrt_p + sqrt_a)
-        phi       = np.arctan((1.0 - ecc_omg22**2) / (2.0 * ecc_omg22))
+        self.anchor_points = fit_vals.shape[3] if len(fit_vals.shape)==4 else 1
+
+        points = np.vstack((
+            np.array(x_vals).flatten(), 
+            np.array(y_vals).flatten(), 
+            np.array(z_vals).flatten()
+        )).T
+
+        values = np.array(fit_vals).reshape(-1, self.anchor_points)
+
+        self.p_min = points.min(axis=0)
+        self.p_max = points.max(axis=0)
+        self.p_range = self.p_max - self.p_min
         
-        ecc[valid_mask] = np.cos(phi / 3.0) - np.sqrt(3.0) * np.sin(phi / 3.0)
+        scaled_points = (points - self.p_min) / self.p_range
         
-    return ecc.item() if ecc.ndim == 0 else ecc
-
-
-# Gergely Functions -------------------------------------------------------------------------------
-# -------------------------------------------------------------------------------------------------
-
-def GergelyODEs(
-    tau : float, 
-    state : tuple[float, float], 
-    nu : float, 
-    q : float, 
-    S1z_bar : float, 
-    S2z_bar : float, 
-    e_term : float = 1e-5
-) -> tuple[float, float]:
-
-    """
-    Dimensionless da/dt and de/dt up to 1.5PN.
-    Assumes L and S are aligned. If necessary add the dk/dt term for precessing systems.
-    Based on Gergely (1998). [https://arxiv.org/pdf/gr-qc/9808063]
-
-    Parameters
-    ----------
-    tau : float
-        Dimensionless time. Not used in the equations, but required for solvers.
-    state : tuple[float, float]
-        Tuple containing the values of [a_bar, e],
-        where a_bar is the dimensionless generalized semimajor axis and e is the eccentricity.
-    nu : float
-        Dimensionless symmetric mass ratio, i.e., m1*m2
-    q : float
-        Mass ratio m1/m2
-    S1z_bar : float
-        Dimensionless angular momentum of the primary along the orbital angular momentum.
-        i.e., chi1 / (m1 / m_tot)^2
-    S2z_bar : float
-        Dimensionless angular momentum of the secondary along the orbital angular momentum.
-        i.e., chi2 / (m2 / m_tot)^2
-    e_term : float, optional
-        Terminal eccentricity, the threshold below which the system is considered circularized.
-        Default is 1e-5.
-
-    Returns
-    -------
-    tuple[float, float]
-        Tuple containing the derivatives (da_bar/dtau, de/dtau).
-    """
-
-    # Setup --------------------------------------------------------------
-
-    # Unpack the state variables
-    a_bar, e = state
-
-    # Handle terminal conditions and unphysical values
-    if (
-        (e > 0.99)      or
-        (e < e_term)    or 
-        np.isnan(e)     or
-        (a_bar < 1.00)  or 
-        np.isnan(a_bar)
-    ) : return (0.0, 0.0)
-    
-    # Precompute powers of e and (1 - e^2)
-    e2=e**2; e4=e**4; e6=e**6
-    one_minus_e2 = 1.0 - e2
-    
-    # d(a_bar)/d(tau) ----------------------------------------------------
-
-    # 0PN Term (same as Peters)
-    da_dtau_0PN = - (2 * nu * (37*e4 + 292*e2 + 96)) / \
-                    (15 * a_bar**3 * (one_minus_e2)**3.5)
-    
-    # 1.5PN Term
-    da_dtau_15PN_coeff = nu / (15 * a_bar**4.5 * (one_minus_e2)**5)
-    da_dtau_15PN_poly1 = (363*e6 + 3510*e4 + 7936*e2 + 2128) * (S1z_bar + S2z_bar)
-    da_dtau_15PN_poly2 = (291*e6 + 4224*e4 + 7924*e2 + 1680) * (q * S1z_bar + (1/q) * S2z_bar)
-    
-    da_dtau = da_dtau_0PN + da_dtau_15PN_coeff * (da_dtau_15PN_poly1 + da_dtau_15PN_poly2)
-    
-    # d(e)/d(tau) --------------------------------------------------------
-
-    # 0PN Term (same as Peters)
-    de_dtau_0PN = - (nu * e * (121*e2 + 304)) / \
-                    (15 * a_bar**4 * (one_minus_e2)**2.5)
-    
-    # 1.5PN Term
-    de_dtau_15PN_coeff = (nu * e) / (30 * a_bar**5.5 * (one_minus_e2)**4)
-    de_dtau_15PN_poly1 = (1313*e4 + 5592*e2 + 7032) * (S1z_bar + S2z_bar)
-    de_dtau_15PN_poly2 = (1097*e4 + 6822*e2 + 6200) * (q * S1z_bar + (1/q) * S2z_bar)
-    
-    de_dtau = de_dtau_0PN + de_dtau_15PN_coeff * (de_dtau_15PN_poly1 + de_dtau_15PN_poly2)
-
-    # Return the derivatives ---------------------------------------------
-
-    return (da_dtau, de_dtau)
-
-
-def GergelyEvolve(
-    nu : float, 
-    q : float,
-    S1z_bar : float, 
-    S2z_bar : float,
-    f_start_bar : float, 
-    ecc_start : float,
-    max_tau : float = 1e8,
-    e_term : float = 1e-5,
-    **kwargs
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] :
-    
-    """
-    Evolves the Gergely ODEs in dimensionless time.
-
-    Parameters
-    ----------
-    nu : float
-        Dimensionless symmetric mass ratio, i.e., m1*m2
-    q : float
-        Mass ratio m1/m2
-    S1z_bar : float
-        Dimensionless angular momentum of the primary along the orbital angular momentum.
-        i.e., chi1 / (m1 / m_tot)^2
-    S2z_bar : float
-        Dimensionless angular momentum of the secondary along the orbital angular momentum.
-        i.e., chi2 / (m2 / m_tot)^2
-    f_start_bar : float
-        Starting dimensionless GW frequency.
-    ecc_start : float
-        Starting eccentricity.
-    max_tau : float, optional
-        Maximum dimensionless time to evolve to.
-        Default is 1e8.
-    e_term : float, optional
-        Terminal eccentricity, the threshold below which the system is considered circularized.
-        Default is 1e-5.
-    **kwargs
-        Additional keyword arguments to pass to the ODE solver.
-
-    Returns
-    -------
-    tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
-        Tuple containing the arrays of (tau, a_bar, ecc, f_bar).
-    """
-    
-    # Termination events -------------------------------------------------
-    
-    def circularized(tau, state, *args):
-        return state[1] - e_term
-    circularized.terminal = True
-
-    def eccentricity_minimum(*args):
-        _, de_dtau = GergelyODEs(*args)
-        return de_dtau
-    eccentricity_minimum.terminal = True
-    eccentricity_minimum.direction = 1
-
-    # Solve the ODEs -----------------------------------------------------
-    
-    # Initial conditions
-    omega_orb_bar = np.pi * f_start_bar 
-    a_start_bar   = 1.0 / omega_orb_bar**(2/3) # Keplerian approximation
-    
-    # Integrate using solve_ivp
-    sol = solve_ivp(
-        fun    = GergelyODEs,
-        t_span = [0, max_tau],
-        y0     = [a_start_bar, ecc_start],
-        args   = (nu, q, S1z_bar, S2z_bar, e_term),
-        events = [circularized, eccentricity_minimum],
-        method = 'RK45',       
-        dense_output = True,
-        **kwargs
-    )
-    
-    # Extract results ----------------------------------------------------
-
-    tau_arr   = sol.t
-    a_bar_arr = sol.y[0]
-    ecc_arr   = sol.y[1]
-
-    last_valid_idx = np.argmin(ecc_arr)
-
-    tau_arr   = tau_arr[: last_valid_idx+1]
-    a_bar_arr = a_bar_arr[: last_valid_idx+1]
-    ecc_arr   = ecc_arr[: last_valid_idx+1]
-
-    # Again Keplerian approximation
-    f_bar_arr = (1.0 / np.pi) * (a_bar_arr**(-3/2))
-
-    return tau_arr, a_bar_arr, ecc_arr, f_bar_arr
-
-
-def gergely_f_start_bar(
-    nu : float,
-    q : float, 
-    S1z_bar : float, 
-    S2z_bar : float, 
-    ecc_start : float, 
-    target_tau : float, 
-    f_min_bar : float = 1e-7,
-    f_max_bar : float = 1e-2,
-    **kwargs
-) -> float :
-    
-    """
-    Finds the starting dimensionless frequency for a target dimensionless duration.
-    Uses the Gergely ODEs. This method looses accuracy at high eccentricities.
-    Use the teobresumsfits routines for more accurate phenomenological fits.
-
-    Parameters
-    ----------
-    nu : float
-        Dimensionless symmetric mass ratio, i.e., m1*m2
-    q : float
-        Mass ratio m1/m2
-    S1z_bar : float
-        Dimensionless angular momentum of the primary along the orbital angular momentum.
-        i.e., chi1 / (m1 / m_tot)^2
-    S2z_bar : float
-        Dimensionless angular momentum of the secondary along the orbital angular momentum.
-        i.e., chi2 / (m2 / m_tot)^2
-    ecc_start : float
-        Starting eccentricity.
-    target_tau : float
-        Target dimensionless duration of the waveform.
-    f_min_bar : float, optional
-        Minimum dimensionless frequency to consider in the search.
-        Default is 1e-7.
-    f_max_bar : float, optional
-        Maximum dimensionless frequency to consider in the search.
-        Default is 1e-2.
-    **kwargs
-        Additional keyword arguments to pass to the ODE solver.
-    
-    Returns
-    -------
-    float
-        The starting dimensionless frequency f_start_bar that achieves the target duration.
-    """
-    
-    def duration_error(f_guess_bar) :
-        tau, _, _, _ = GergelyEvolve(
-            nu=nu, 
-            q=q, 
-            S1z_bar=S1z_bar, 
-            S2z_bar=S2z_bar, 
-            f_start_bar=f_guess_bar, 
-            ecc_start=ecc_start,
-            max_tau=target_tau*1e1,
-            **kwargs
+        self.rbf = RBFInterpolator(
+            y = scaled_points,
+            d = values,
+            kernel    = 'thin_plate_spline',
+            smoothing = smoothing,
+            neighbors = neighbors
         )
-        return (tau[-1] - target_tau)
-
-    while True :
-
-        try : 
-            result = root_scalar(
-                duration_error,
-                bracket=[f_min_bar, f_max_bar], 
-                method='brentq',
-                xtol=1e-10
-            )
-            return result.root
         
-        except ValueError :
-            f_max_bar *= 2.0
-            f_min_bar *= 0.5
-            continue
+    def __call__(self, query_points: np.ndarray) -> np.ndarray :
 
-        except Exception as e :
-            print(f"Initial conditions failed : {e}")
-            return 0
+        """
+        Queries the interpolator at given points.
+        
+        Parameters
+        ----------
+        query_points: array-like of shape (M, 3) or (3,)
+            Coordinates of the points where the interpolation is to be evaluated.
+        
+        Returns
+        -------
+        array-like or scalar
+            Interpolated values at the query points.
+        
+        Notes
+        -----
+        As the data is setup, the three coordinates, in order, are: 
+        1 .log_waveform_duration_dimensionless or log_requested_f_start_dimensionless, 
+        2. ecc_start, 
+        3. chi_eff.
+        """
+
+        # Required for brentq
+        q_points = [np.array(i).flatten() for i in query_points]
+        q_points = [i.item() if len(i)==1 else i for i in q_points]
+
+        q_points = np.atleast_2d(q_points)
+
+        q_min = q_points.min(axis=0)
+        q_max = q_points.max(axis=0)
+
+        if np.any(q_min < self.p_min) or np.any(q_max > self.p_max):
+            warnings.warn("Query points are outside the range of the training data.\n" 
+                 "Extrapolation may lead to unreliable results.")
+
+        q_scaled = (q_points - self.p_min) / self.p_range
+        res = self.rbf(q_scaled)
+
+        if res.shape[0]==1 or res.shape[1]==1 : res = res.flatten()
+        if len(res) == 1 : res = res.item()
+        return res
+        
+    def poly(self, x_val: float, y_val: float, z_val: float, deg:int=6) -> np.polynomial.Polynomial :
+
+        """
+        Return polynomial fit at the given point.
+        Only valid for non-scalar data.
+        
+        Parameters
+        ----------
+        x_val : float
+            The x-coordinate of the point.
+        y_val : float
+            The y-coordinate of the point.
+        z_val : float
+            The z-coordinate of the point.
+        deg : int
+            The degree of the polynomial fit.
+        
+        Returns
+        -------
+        np.polynomial.Polynomial
+            Polynomial fit at the given point.
+        
+        Notes
+        -----
+        As the data is setup, the three coordinates, in order, are:
+        1 .log_waveform_duration_dimensionless or log_requested_f_start_dimensionless, 
+        2. ecc_start, 
+        3. chi_eff.
+        """
+
+        if self.anchor_points == 1 :
+            raise ValueError("Polynomial fit is not available for scalar data.")
+
+        anchor_ys = self.__call__([x_val, y_val, z_val])
+        anchor_xs = np.linspace(self.poly_interp_low, self.poly_interp_high or x_val, self.anchor_points)
+
+        return np.polynomial.Polynomial.fit(anchor_xs, anchor_ys, deg=deg)
+
+
+# Initializing the Interpolators ------------------------------------------------------------------
+
+with np.load(config.teobresums_fits_path) as f : data = dict(f)
+
+# min_log_tau_interp sets the lower bound for datapoints and polynomial interpolation.
+# All logarithms are base 10.
+
+log_f_peri_bar_interpolator = AnisotropicTEFPhenom(
+    x_vals          = data['log_waveform_duration_dimensionless'],
+    y_vals          = data['ecc_start'],
+    z_vals          = data['chi_eff'],
+    fit_vals        = data['log_f_peri_anchors_dimensionless'],
+    poly_interp_low = data['min_log_tau_interp'],
+)
+"""Interpolator for log of dimensionless periastron frequencies.
+The three coordinates are (respectively) : 
+log_waveform_duration_dimensionless, ecc_start, chi_eff."""
+
+log_f_apos_bar_interpolator = AnisotropicTEFPhenom(
+    x_vals          = data['log_waveform_duration_dimensionless'],
+    y_vals          = data['ecc_start'],
+    z_vals          = data['chi_eff'],
+    fit_vals        = data['log_f_apos_anchors_dimensionless'],
+    poly_interp_low = data['min_log_tau_interp'],
+)
+"""Interpolator for log of dimensionless apastron frequencies.
+The three coordinates are (respectively) : 
+log_waveform_duration_dimensionless, ecc_start, chi_eff."""
+
+log_f_orbavg_bar_interpolator = AnisotropicTEFPhenom(
+    x_vals          = data['log_waveform_duration_dimensionless'],
+    y_vals          = data['ecc_start'],
+    z_vals          = data['chi_eff'],
+    fit_vals        = data['log_f_orbavg_anchors_dimensionless'],
+    poly_interp_low = data['min_log_tau_interp'],
+)
+"""Interpolator for log of dimensionless orbital average frequencies.
+The three coordinates are (respectively) : 
+log_waveform_duration_dimensionless, ecc_start, chi_eff."""
+
+log_f_calib_bar_interpolator = AnisotropicTEFPhenom(
+    x_vals          = data['log_requested_f_start_dimensionless'],
+    y_vals          = data['ecc_start'],
+    z_vals          = data['chi_eff'],
+    fit_vals        = data['log_measured_f_start_dimensionless'],
+    poly_interp_low = data['min_log_tau_interp'],
+)
+"""Interpolator calibrating log of dimensionless starting frequencies.
+This is used to correct f_start offsets in TEOBResums.
+The three coordinates are (respectively) : 
+log_requested_f_start_dimensionless, ecc_start, chi_eff.
+The output is the log_measured_f_start_dimensionless."""
+
+del data
 
 
 # TEOBResumS Phenomenological Fits ----------------------------------------------------------------
-# -------------------------------------------------------------------------------------------------
 
 def teobresumsfits_tau_at_fbar(
     log_sig_tau : float,
