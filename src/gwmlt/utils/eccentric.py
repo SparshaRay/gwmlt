@@ -336,7 +336,8 @@ def teobresumsfits_tau_at_fbar(
     ecc_start : float,
     chi_eff : float,
     log_fbar : float,
-    extrapolate : bool = False
+    extrapolate : bool = False,
+    suppress_warnings : bool = False
 ) -> float :
 
     """
@@ -360,6 +361,9 @@ def teobresumsfits_tau_at_fbar(
     extrapolate : bool, optional
         Whether to allow extrapolation outside the training data range.
         Default is False.
+    suppress_warnings : bool, optional
+        Whether to suppress warnings about no valid roots found within the time bracket.
+        Default is False.
 
     Returns
     -------
@@ -379,18 +383,19 @@ def teobresumsfits_tau_at_fbar(
     interp_low  = log_f_orbavg_bar_interpolator.poly_interp_low
     valid_root  = real_roots[np.all([real_roots>=interp_low, real_roots<=log_sig_tau], axis=0)]
 
+    if len(valid_root) == 1 : return valid_root[0]
+    if len(valid_root) > 1  : raise ValueError("Multiple roots found in time bracket")
     if len(valid_root) == 0 :
         if not extrapolate : 
-            warnings.warn("! No valid roots found in time bracket, fallback to closest bound.")
+            if not suppress_warnings :
+                warnings.warn("No valid roots found in time bracket, fallback to closest bound.")
             return log_sig_tau if orbavg_poly(log_sig_tau)>log_fbar else interp_low
         else :
-            warnings.warn("! No valid roots found in time bracket, extrapolating outside bound.")
+            if not suppress_warnings :
+                warnings.warn("No valid roots found in time bracket, extrapolating outside bound.")
             if orbavg_poly(log_sig_tau)>log_fbar and np.any(real_roots>log_sig_tau) :
                 return real_roots[real_roots>log_sig_tau].min()
             else : return real_roots[real_roots<interp_low].max()
-
-    if len(valid_root) > 1 : raise ValueError("Multiple roots found in time bracket")
-    return valid_root[0]
 
 
 def teobresumsfits_ecc_at_fbar(
@@ -398,7 +403,8 @@ def teobresumsfits_ecc_at_fbar(
     ecc_start : float,
     chi_eff : float,
     log_fbar : float,
-    extrapolate : bool = False
+    extrapolate : bool = False,
+    suppress_warnings : bool = False
 ) -> float :
 
     """
@@ -422,6 +428,9 @@ def teobresumsfits_ecc_at_fbar(
     extrapolate : bool, optional
         Whether to allow extrapolation outside the training data range.
         Default is False.
+    suppress_warnings : bool, optional
+        Whether to suppress warnings about no valid roots found within the time bracket.
+        Default is False.
 
     Returns
     -------
@@ -434,7 +443,10 @@ def teobresumsfits_ecc_at_fbar(
     All logarithms are base 10.
     """
     
-    tau = teobresumsfits_tau_at_fbar(log_sig_tau, ecc_start, chi_eff, log_fbar, extrapolate=extrapolate)
+    tau = teobresumsfits_tau_at_fbar(
+        log_sig_tau, ecc_start, chi_eff, log_fbar, 
+        extrapolate=extrapolate, suppress_warnings=suppress_warnings
+    )
     f_peri_bar = 10 ** log_f_peri_bar_interpolator.poly(log_sig_tau, ecc_start, chi_eff)(tau)
     f_apos_bar = 10 ** log_f_apos_bar_interpolator.poly(log_sig_tau, ecc_start, chi_eff)(tau)
     return ecc_from_envelop_freqs(f_apos_bar, f_peri_bar)
@@ -489,7 +501,10 @@ def teobresumsfits_initial_conditions(
     # reference eccentricity at the reference frequency.
     def ecc_error(ecc_start) :
         ecc_guess = teobresumsfits_ecc_at_fbar(
-            log_sig_tau, ecc_start, chi_eff, log_f_ref_bar, extrapolate=extrapolate)
+            log_sig_tau, ecc_start, chi_eff, log_f_ref_bar, 
+            extrapolate=extrapolate, suppress_warnings=True
+            # Just let brentq query whatever point it wants, dont throw warnings here.
+        )
         return ecc_guess - ecc_ref
     
     # Since ecc is the 2nd argument (or coordinate) of the interpolators, 
@@ -497,11 +512,8 @@ def teobresumsfits_initial_conditions(
     ecc_bracket = [log_f_orbavg_bar_interpolator.p_min[1], 
                    log_f_orbavg_bar_interpolator.p_max[1]]
     
-    with warnings.catch_warnings() :
-        # Quick and dirty, just let brentq query whatever point it wants.
-        warnings.filterwarnings("ignore", message=".*! No valid roots.*")
-        try : ecc_start = root_scalar(ecc_error, bracket=ecc_bracket, method='brentq').root
-        except ValueError as e : raise ValueError(f"Initial conditions failed: {e}")
+    try : ecc_start = root_scalar(ecc_error, bracket=ecc_bracket, method='brentq').root
+    except ValueError as e : raise ValueError(f"Initial conditions failed: {e}")
     
     required_log_fbar_start = log_f_orbavg_bar_interpolator(
         [log_sig_tau, ecc_start, chi_eff])[-1] # Fetch the last index, i.e. starting freq anchor point
@@ -514,7 +526,8 @@ def teobresumsfits_initial_conditions(
         try :
             ecc_obt = teobresumsfits_ecc_at_fbar(
                 log_sig_tau, ecc_start, chi_eff, log_f_ref_bar, extrapolate=extrapolate)
-        except Warning as w : raise Exception(f"Initial conditions failed: {w}")
+        except Warning as w : 
+            if not extrapolate : raise Exception(f"Initial conditions failed: {w}")
         if np.abs(ecc_obt - ecc_ref) > 1e-2 : raise Exception("Initial conditions failed")
 
     # Since TEOBResumS don't start the waveform at the requested f_start, 
