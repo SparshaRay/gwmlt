@@ -263,11 +263,13 @@ def pols_to_freq_features(
 ) -> dict[str, np.ndarray] :
     
     """
-    Get the frequency and phase evolutions over time from the plus and cross polarizations.
-    The peak and through locations (along with their corresponding frequencies) 
-    in the frequency evolution are also returned. This is useful to get periastron and 
-    apastron frequencies from eccentric waveforms, but can also be repurposed 
-    for microlensed or precessing waveforms.
+    Get various frequency and phase evolution trends over time from the plus and cross 
+    polarizations of the waveform (assumes zero inclination and coalescence time of 0.0).
+    The phase and frequency evolution, points of frequency peaks and troughs 
+    (corresponding to periastron and apastron points for eccentric binaries),
+    points of calculating the orbit average frequency, and a function for obtaining
+    interpolated eccentricity values is returned. This is primarily useful to work with 
+    eccentric waveforms, but can also be repurposed for microlensed or precessing waveforms. 
     Based on : https://arxiv.org/pdf/2302.11257
 
     Parameters
@@ -316,15 +318,28 @@ def pols_to_freq_features(
     omg_22_dir = np.array(omg_22_dir)
     omg_22_tms = np.array(omg_22_tms)
 
+    peri_fit_poly = np.polynomial.Polynomial.fit(np.log10(-t_peri), np.log10(f_peri), deg=6)
+    apos_fit_poly = np.polynomial.Polynomial.fit(np.log10(-t_apos), np.log10(f_apos), deg=6)
+
+    from .eccentric import ecc_from_envelop_freqs
+
+    def interp_ecc(t) :
+        interp_apos = 10**apos_fit_poly(np.log10(-t))
+        interp_peri = 10**peri_fit_poly(np.log10(-t))
+        return ecc_from_envelop_freqs(interp_apos, interp_peri)
+
     return {
-        "time"       : -time[::-1], # Full time array
-        "phase"      : phase,       # Phase
-        "f_inst"     : f_inst,      # Instantaneous frequency
-        "t_peri"     : t_peri,      # Periastron times
-        "f_peri"     : f_peri,      # Periastron frequencies
-        "phase_peri" : phase_peri,  # Phase at periastron
-        "t_apos"     : t_apos,      # Apastron times
-        "f_apos"     : f_apos,      # Apastron frequencies
-        "omg_22_tms" : omg_22_tms,  # omega_22 times
-        "omg_22_dir" : omg_22_dir,  # omega_22 from periastron phase
+        "time"          : -time[::-1],   # Full time array
+        "phase"         : phase,         # Phase
+        "f_inst"        : f_inst,        # Instantaneous frequency
+        "t_peri"        : t_peri,        # Periastron times
+        "f_peri"        : f_peri,        # Periastron frequencies
+        "peri_fit_poly" : peri_fit_poly, # Periastron frequency fit polynomial
+        "phase_peri"    : phase_peri,    # Phase at periastron
+        "t_apos"        : t_apos,        # Apastron times
+        "f_apos"        : f_apos,        # Apastron frequencies
+        "apos_fit_poly" : apos_fit_poly, # Apastron frequency fit polynomial
+        "omg_22_tms"    : omg_22_tms,    # omega_22 times
+        "omg_22_dir"    : omg_22_dir,    # omega_22 from periastron phase
+        "interp_ecc"    : interp_ecc,    # Interpolated eccentricity function
     }
