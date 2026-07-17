@@ -27,7 +27,7 @@ class AnisotropicTEFPhenom :
     ) -> None :
 
         """
-        Initialize an R3 -> R1 RBF Interpolator.
+        Initialize an anisotropic R3 -> R1 RBF interpolator for TEF.
 
         Parameters
         ----------
@@ -98,7 +98,9 @@ class AnisotropicTEFPhenom :
         Notes
         -----
         As the data is setup, the three coordinates, in order, are: 
-        log_waveform_duration_dimensionless, ecc_start, chi_eff.
+        1 .log_waveform_duration_dimensionless or log_requested_f_start_dimensionless, 
+        2. ecc_start, 
+        3. chi_eff.
         """
 
         # Required for brentq
@@ -145,8 +147,10 @@ class AnisotropicTEFPhenom :
         
         Notes
         -----
-        As the data is setup, the three coordinates, in order, are: 
-        log_waveform_duration_dimensionless, ecc_start, chi_eff.
+        As the data is setup, the three coordinates, in order, are:
+        1 .log_waveform_duration_dimensionless or log_requested_f_start_dimensionless, 
+        2. ecc_start, 
+        3. chi_eff.
         """
 
         if self.anchor_points == 1 :

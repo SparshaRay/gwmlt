@@ -2,6 +2,18 @@
 Various Functions Related to Eccentric Systems
 """
 
+# [NOTE] :
+#
+# Throughout this file, the "bar" suffix denotes dimensionless quantities.
+#
+# Except for the `ecc_from_envelop_freqs` and `teobresumsfits_generalized_initconds` functions
+# the rest of the functions are exclusively dimensionless. To get dimensionless quantities from
+# physical quantities, use the conversion classes in `.general.py`.
+#
+# All the teobresumsfits functions except the `teobresumsfits_generalized_initconds` function
+# operate with the dimensionless time and frequency in logarithmic (base 10) scale.
+
+
 import warnings
 
 import numpy as np
@@ -38,6 +50,12 @@ def ecc_from_envelop_freqs(
     -------
     float | np.ndarray
         Eccentricity corresponding to the given apocenter and pericenter frequencies.
+
+    Note
+    ----
+    The function can handle both scalar and array inputs for f_apos and f_peri.
+    The output will be a scalar if the inputs are scalars, and an array if the 
+    inputs are arrays of the same shape. The frequencies may both be dimensionless or physical.
     """
 
     f_apos = np.asarray(f_apos)
@@ -95,8 +113,10 @@ def GergelyODEs(
         Mass ratio m1/m2
     S1z_bar : float
         Dimensionless angular momentum of the primary along the orbital angular momentum.
+        i.e., chi1 / (m1 / m_tot)^2
     S2z_bar : float
         Dimensionless angular momentum of the secondary along the orbital angular momentum.
+        i.e., chi2 / (m2 / m_tot)^2
     e_term : float, optional
         Terminal eccentricity, the threshold below which the system is considered circularized.
         Default is 1e-5.
@@ -179,8 +199,10 @@ def GergelyEvolve(
         Mass ratio m1/m2
     S1z_bar : float
         Dimensionless angular momentum of the primary along the orbital angular momentum.
+        i.e., chi1 / (m1 / m_tot)^2
     S2z_bar : float
         Dimensionless angular momentum of the secondary along the orbital angular momentum.
+        i.e., chi2 / (m2 / m_tot)^2
     f_start_bar : float
         Starting dimensionless GW frequency.
     ecc_start : float
@@ -273,8 +295,10 @@ def gergely_f_start_bar(
         Mass ratio m1/m2
     S1z_bar : float
         Dimensionless angular momentum of the primary along the orbital angular momentum.
+        i.e., chi1 / (m1 / m_tot)^2
     S2z_bar : float
         Dimensionless angular momentum of the secondary along the orbital angular momentum.
+        i.e., chi2 / (m2 / m_tot)^2
     ecc_start : float
         Starting eccentricity.
     target_tau : float
@@ -468,6 +492,7 @@ def teobresumsfits_initial_conditions(
     the log of dimensionless reference frequency (log_f_ref_bar).
 
     Based on a database of highly faithful phenomenological fits to TEOBResumS.
+    This method holds better accuracies than the Gergely ODEs at high eccentricities.
 
     Parameters
     ----------
@@ -494,7 +519,7 @@ def teobresumsfits_initial_conditions(
     ----
     All logarithms are base 10.
     If extrapolate is set to False, log_f_ref_bar must be reached after 
-    the start time. Set extrapolate to True for backwards interpolation.
+    the start time. Set extrapolate to True to enable backwards interpolation.
     """
     
     # Find the starting eccentricity for which we will get the 
@@ -521,7 +546,7 @@ def teobresumsfits_initial_conditions(
     # Verify the results
     with warnings.catch_warnings() :
         if not extrapolate : warnings.filterwarnings("error")
-        # Catch the warning from AnisotropicTEFPhenom.__call__
+        # Catch the warning from AnisotropicTEFPhenom.__call__ range check
         # when the query points are outside the training data range.
         try :
             ecc_obt = teobresumsfits_ecc_at_fbar(

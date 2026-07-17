@@ -135,7 +135,7 @@ def convert_lframe_to_jframe(
 class DimfulToDimless :
 
     """
-    Class to convert dimensionful quantities to dimensionless quantities.
+    Class to convert physical quantities to dimensionless quantities.
     """
 
     def __init__(self, mass_1: float, mass_2: float) -> None :
@@ -200,7 +200,7 @@ class DimfulToDimless :
 class DimlessToDimful :
 
     """
-    Class to convert dimensionless quantities to dimensionful quantities.
+    Class to convert dimensionless quantities to physical quantities.
     """
 
     def __init__(self, total_mass : float) -> None :
@@ -266,7 +266,8 @@ def pols_to_freq_features(
     Get the frequency and phase evolutions over time from the plus and cross polarizations.
     The peak and through locations (along with their corresponding frequencies) 
     in the frequency evolution are also returned. This is useful to get periastron and 
-    apastron frequencies from eccentric waveforms, but can also be repurposed for microlensed waveforms.
+    apastron frequencies from eccentric waveforms, but can also be repurposed 
+    for microlensed or precessing waveforms.
     Based on : https://arxiv.org/pdf/2302.11257
 
     Parameters
