@@ -5,43 +5,45 @@ PyCBC TD Waveform Generator
 from warnings import warn
 
 from pycbc.waveform import get_td_waveform
-from pycbc.types.timeseries import TimeSeries
 
-from ..core.sources import BBHSystem
-from ..core.morphologies import Quasicircular, Eccentric, Lensed
-from ..core.observatories import LVK, Decihertz
-from ..config import config
+from gwmlt.core.sources import BinarySystem
+from gwmlt.core.morphologies import Morphology, EccentricProtocol
+from gwmlt.core.observatories import Observatory, GroundBased, Decihertz
+from gwmlt.core.timeseries import Polarizations
+from gwmlt.utils import imrphenom_initconds, teobresums_initconds
+from gwmlt.config import config
 
 
 def generate_waveform(
-    source: BBHSystem,
-    morphology: Quasicircular | Eccentric | Lensed,
-    observatory: LVK | Decihertz | None,
-    **user_override_kwargs
-) -> tuple[TimeSeries, TimeSeries, dict] :
+    source: BinarySystem,
+    morphology: Morphology,
+    observatory: Observatory | None,
+    **override_kwargs
+) -> Polarizations :
     
     """
-    Generate polarization (h_plus, h_cross) timeseries
+    Generate the polarization (h_plus, h_cross) timeseries.
 
     Parameters
     ----------
-    source : BBHSystem
-        The binary black hole system parameters.
-    morphology : Quasicircular | Eccentric | Lensed
+    source : BinarySystem
+        The compact binary system parameters.
+    morphology : Morphology
         The waveform kind.
-    observatory : LVK | Decihertz | None
+    observatory : Observatory | None
         The observatory parameters.
-    **user_override_kwargs
+    **override_kwargs
         Additional keyword arguments to override any waveform generation parameter.
 
     Returns
     -------
-    tuple[TimeSeries, TimeSeries, dict]
-        A tuple containing the generated h_plus timeseries, the h_cross timeseries,
-        and a dictionary containing the parameters for PyCBC `get_td_waveform` function.
+    Polarizations
+        A dataclass containing the generated h_plus timeseries, the h_cross timeseries, 
+        the geocenter trigger time, and a dictionary containing the parameters 
+        passed to the PyCBC `get_td_waveform` function.
     """
 
-    pars = _get_pars(source, morphology, observatory, **user_override_kwargs)
+    pars = _get_pars(source, morphology, observatory, **override_kwargs)
     hp, hc = get_td_waveform(**pars)
 
     hp = hp.taper_timeseries(location='TAPER_START')
@@ -57,14 +59,20 @@ def generate_waveform(
     hp.start_time += source.geocent_time
     hc.start_time += source.geocent_time
     
-    return hp, hc, pars
+    # return hp, hc, pars
+    return Polarizations(
+        hp = hp,
+        hc = hc,
+        geocent_time = source.geocent_time,
+        generation_pars = pars
+    )
 
 
 def _get_pars(
-    source: BBHSystem,
-    morphology: Quasicircular | Eccentric | Lensed,
-    observatory: LVK | Decihertz | None,
-    **user_override_kwargs
+    source: BinarySystem,
+    morphology: Morphology,
+    observatory: Observatory | None,
+    **override_kwargs
 ) -> dict :
 
     """
@@ -72,13 +80,13 @@ def _get_pars(
 
     Parameters
     ----------
-    source : BBHSystem
-        The binary black hole system parameters.
-    morphology : Quasicircular | Eccentric | Lensed
+    source : BinarySystem
+        The compact binary system parameters.
+    morphology : Morphology
         The waveform kind.
-    observatory : LVK | Decihertz | None
+    observatory : Observatory | None
         The observatory parameters.
-    **user_override_kwargs
+    **override_kwargs
         Additional keyword arguments to override any waveform generation parameter.
 
     Returns
@@ -87,12 +95,19 @@ def _get_pars(
         A dictionary containing the parameters for PyCBC `get_td_waveform` function.
     """
 
+    if observatory is None :
+        warn("Observatory is set to None. Setting f_lower to 20 Hz "
+             "and sample_rate to 4096 Hz for waveform generation.\n"
+             "You can override this and other parameters by passing them as keyword arguments")
 
     # Binary Parameters ---------------------------------------------------------------------------
 
     binary_params = {
         "mass1"  : source.mass_1,
         "mass2"  : source.mass_2,
+
+        "lambda_1" : source.lambda_1,
+        "lambda_2" : source.lambda_2,
 
         "spin1x" : source.l_frame.spin1x,
         "spin1y" : source.l_frame.spin1y,
@@ -107,63 +122,67 @@ def _get_pars(
         "distance"    : source.luminosity_distance,
     }
 
-    # Since teobresums expects lambda1 and lambda2 values to be provided as well
-    if morphology.wf_approximant == "teobresums" :
-        # No tidal effects for black holes
-        binary_params["lambda1"] = 0.0
-        binary_params["lambda2"] = 0.0
-
+    # Set the in-plane spins to zero if precession is not allowed
+    if morphology.allow_precession == False :
+        binary_params.update({
+            "spin1x": 0.0, "spin1y": 0.0,
+            "spin2x": 0.0, "spin2y": 0.0
+        })
 
     # Initial Conditions for Waveform Generation --------------------------------------------------
     
     initial_conditions = {}
 
     if observatory is None :
-        warn('Observatory is set to None. Setting f_lower to 20 Hz for waveform generation.\n'
-             'You can override this and other parameters by passing them as keyword arguments')
         initial_conditions["f_lower"] = 20.0
-        if morphology.wf_approximant == "teobresums" :
+        if isinstance(morphology, EccentricProtocol) :
             initial_conditions["ecc"]     = morphology.eccentricity
             initial_conditions["anomaly"] = morphology.anomaly
 
-    elif isinstance(observatory, LVK) :
-
-        if morphology.wf_approximant == "IMRPhenomXO4a" :
-            initial_conditions["f_lower"] = observatory.f_low
-
-        elif morphology.wf_approximant == "teobresums" :
-            initial_conditions["f_lower"] = observatory.f_low
+    elif isinstance(observatory, GroundBased) :
+        initial_conditions["f_lower"] = observatory.f_low
+        if isinstance(morphology, EccentricProtocol) :
             initial_conditions["ecc"]     = morphology.eccentricity
             initial_conditions["anomaly"] = morphology.anomaly
-        
-        else : raise NotImplementedError(f"Waveform approximant {morphology.wf_approximant} is not supported")
 
     elif isinstance(observatory, Decihertz) :
 
-        raise NotImplementedError("Decihertz band initial conditions are not implemented yet")
-
-        # if morphology.wf_approximant == "IMRPhenomXO4a" :
-        #     f_start = get_imrphenomx_fstart(source, observatory.wf_duration)
-        #     initial_conditions["f_lower"] = f_start
+        if morphology.wf_approximant == "IMRPhenomXO4a" :
+            f_start = imrphenom_initconds(
+                mass_1 = source.mass_1,
+                mass_2 = source.mass_2,
+                chi1z  = source.l_frame.spin1z,
+                chi2z  = source.l_frame.spin2z,
+                waveform_duration = observatory.wf_duration,
+            )
+            initial_conditions["f_lower"] = f_start
         
-        # elif morphology.wf_approximant == "teobresums" :
-        #     f_start, ecc_start = get_teobresums_fstart(
-        #         source, observatory.wf_duration, morphology.eccentricity, observatory.ecc_f_ref
-        #     )
-        #     initial_conditions["f_lower"] = f_start
-        #     initial_conditions["ecc"]     = ecc_start
-        #     initial_conditions["anomaly"] = morphology.anomaly
+        elif morphology.wf_approximant == "teobresums" and isinstance(morphology, EccentricProtocol) :
+            ecc_start, f_start = teobresums_initconds(
+                mass_1 = source.mass_1,
+                mass_2 = source.mass_2,
+                chi1z  = source.l_frame.spin1z,
+                chi2z  = source.l_frame.spin2z,
+                ecc_ref = morphology.eccentricity,
+                f_ref   = observatory.ecc_f_ref,
+                waveform_duration = observatory.wf_duration,
+            )
+            initial_conditions["f_lower"] = f_start
+            initial_conditions["ecc"]     = ecc_start
+            initial_conditions["anomaly"] = morphology.anomaly
         
-        # else : raise NotImplementedError(f"Waveform approximant {morphology.wf_approximant} is not supported")
-    
+        else : raise NotImplementedError(
+            f"Waveform approximant '{morphology.wf_approximant}' with morphology "
+            f"'{type(morphology).__name__}' is not supported for Decihertz band.")
+          
     else : raise NotImplementedError(f"Observatory {observatory} is not supported")
-
 
     # Waveform Generation Parameters --------------------------------------------------------------
 
+    sample_rate = observatory.wf_gen_srate if observatory is not None else 4096.0
     waveform_params = {
         "approximant" : morphology.wf_approximant,
-        "delta_t"     : 1.0 / observatory.wf_gen_srate,
+        "delta_t"     : 1.0 / sample_rate,
     }
 
     if morphology.wf_approximant == "IMRPhenomXO4a" :
@@ -177,14 +196,18 @@ def _get_pars(
             )
             waveform_params["f_ref"] = initial_conditions["f_lower"]
     
-    if morphology.wf_approximant == "teobresums" :
+    elif morphology.wf_approximant == "teobresums" :
+        # TEOBResumS does not support f_ref, it uses the f_lower as the reference frequency for spin evolution.
         waveform_params["use_mode_lm"] = config.waveform.teobresums_modes
         waveform_params["ecc_freq"]    = config.waveform.ecc_freq
-
+    
+    else : warn(f"No special parameters defined for waveform approximant {morphology.wf_approximant}. Using default settings.")
 
     # Merge all parameters ------------------------------------------------------------------------
 
+    # Unpack and repack
     pars = {**binary_params, **initial_conditions, **waveform_params}
-    pars.update(morphology.override_pars)
-    pars.update(user_override_kwargs)
+    # Let user override any of the parameters (e.g., changing f_lower, delta_t, etc.)
+    pars.update(override_kwargs)
+    # Return the final parameters dictionary
     return pars
