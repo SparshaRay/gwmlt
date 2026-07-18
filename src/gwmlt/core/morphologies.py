@@ -3,27 +3,45 @@ Structs to Define Waveform Kinds
 """
 
 from dataclasses import dataclass, field
+from typing import Protocol, runtime_checkable
 
 
-# Base class for waveform morphologies ------------------------------------------------------------
+# Base classes for waveform morphologies ----------------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class Morphology :
     """
     Base class for waveform morphologies. This is primarily used for type hinting.
-    `wf_approximant` and `override_pars` are necessary (and preferably fixed) 
-    attributes for any given morphology. They must be set downstream or post-hoc setattr.
+    The `wf_approximant` field is a necessary attribute for any given morphology. 
+    It must be set downstream or post-hoc setattr.
 
     Attributes
     ----------
     wf_approximant : str
         The LAL/PyCBC waveform approximant string.
-    override_pars : dict
-        A dictionary of parameters to override before generating the waveform.
+    allow_precession : bool
+        A boolean indicating whether precession is allowed in the waveform generation.
+        If False, the in-plane spin components are set to zero.
     """
-    wf_approximant : str = field(init=False)
-    override_pars  : dict[str, float] = field(init=False, default_factory=lambda:{})
+    wf_approximant   : str  = field(init=False)
+    allow_precession : bool = field(init=False)
+
+
+# Structural protocols
+
+@runtime_checkable
+class EccentricProtocol(Protocol) :
+    """Contract for morphologies that include eccentricity."""
+    eccentricity : float
+    anomaly      : float
+
+@runtime_checkable
+class LensedProtocol(Protocol) :
+    """Contract for morphologies that include microlensing parameters."""
+    m_lens : float
+    y_lens : float
+    z_lens : float
 
 
 # Morphology kinds --------------------------------------------------------------------------------
@@ -41,23 +59,17 @@ class Quasicircular(Morphology) :
     wf_approximant : str
         The LAL/PyCBC waveform model string.
         Default is "IMRPhenomXO4a".
-    override_pars : dict
-        A dictionary of parameters to override before generating the waveform.
-        Default is {"spin1x": 0.0, "spin1y": 0.0, "spin2x": 0.0, "spin2y": 0.0},
-        i.e. no precession is considered.
+    allow_precession : bool
+        A boolean indicating whether precession is allowed in the waveform generation.
+        If False, the in-plane spin components are set to zero. Default is False.
     """
 
-    wf_approximant : str = field(default="IMRPhenomXO4a", init=False)
-    override_pars  : dict[str, float] = field(init=False, default_factory=lambda: {
-        "spin1x" : 0.0,
-        "spin1y" : 0.0,
-        "spin2x" : 0.0,
-        "spin2y" : 0.0,
-    })
+    wf_approximant   : str  = field(default="IMRPhenomXO4a", init=False)
+    allow_precession : bool = field(default=False, init=False)
 
 
 @dataclass(frozen=True)
-class Eccentric(Morphology) :
+class Eccentric(Morphology, EccentricProtocol) :
 
     """
     Non-zero orbital eccentricity binary system.
@@ -78,25 +90,19 @@ class Eccentric(Morphology) :
     wf_approximant : str
         The eccentric waveform model string.
         Default is "teobresums".
-    override_pars : dict
-        A dictionary of parameters to override before generating the waveform.
-        Default is {"spin1x": 0.0, "spin1y": 0.0, "spin2x": 0.0, "spin2y": 0.0},
-        i.e. no precession is considered.
+    allow_precession : bool
+        A boolean indicating whether precession is allowed in the waveform generation.
+        If False, the in-plane spin components are set to zero. Default is False.
     """
 
-    eccentricity   : float
-    anomaly        : float = 0.0
-    wf_approximant : str = field(default="teobresums", init=False)
-    override_pars  : dict[str, float] = field(init=False, default_factory=lambda: {
-        "spin1x" : 0.0,
-        "spin1y" : 0.0,
-        "spin2x" : 0.0,
-        "spin2y" : 0.0,
-    })
+    eccentricity     : float
+    anomaly          : float = 0.0
+    wf_approximant   : str   = field(default="teobresums", init=False)
+    allow_precession : bool  = field(default=False, init=False)
 
 
 @dataclass(frozen=True)
-class Lensed(Morphology) :
+class Lensed(Morphology, LensedProtocol) :
 
     """
     Point lens effects on quasi-circular GW signal.
@@ -110,37 +116,32 @@ class Lensed(Morphology) :
         Dimensionless impact parameter between the lens and the source.
     z_lens : float, optional
         Redshift of the lens system.
-        Default is 0.0 (equivalent to treating `m_lens` as the redshifted lens mass).
-    
+        Default is 0.0 (equivalent to treating m_lens as the redshifted lens mass).
+
     Attributes
     ----------
     wf_approximant : str
         The eccentric waveform model string.
         Default is "IMRPhenomXO4a".
-    override_pars : dict
-        A dictionary of parameters to override before generating the waveform.
-        Default is {"spin1x": 0.0, "spin1y": 0.0, "spin2x": 0.0, "spin2y": 0.0},
-        i.e. no precession is considered.
+    allow_precession : bool
+        A boolean indicating whether precession is allowed in the waveform generation.
+        If False, the in-plane spin components are set to zero. Default is False.
     """
     
     m_lens : float
     y_lens : float
     z_lens : float = 0.0
-    wf_approximant : str = field(default="IMRPhenomXO4a", init=False)
-    override_pars  : dict[str, float] = field(init=False, default_factory=lambda: {
-        "spin1x" : 0.0,
-        "spin1y" : 0.0,
-        "spin2x" : 0.0,
-        "spin2y" : 0.0,
-    })
+    wf_approximant   : str  = field(default="IMRPhenomXO4a", init=False)
+    allow_precession : bool = field(default=False, init=False)
 
 
 # Add more morphologies here as needed, e.g. :
 # @dataclass(frozen=True)
-# class LensedEccentricPrecessing(Morphology) :
+# class LensedEccentricPrecessing(Morphology, LensedProtocol, EccentricProtocol) :
 #     wf_approximant : str = field(default="teobresums", init=False)
 #     eccentricity   : float
 #     anomaly        : float = 0.0
 #     m_lens : float
 #     y_lens : float
 #     z_lens : float = 0.0
+#     allow_precession : bool = field(default=True, init=False)
