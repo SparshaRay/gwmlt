@@ -5,9 +5,9 @@ Physics Utilities
 import numpy as np
 import lalsimulation
 
-from ..config import config
-from ..constants import G_SI, C_SI, MSUN_SI
-from ..core.sources import JFrameSpins, LFrameSpins
+from gwmlt.config import config
+from gwmlt.constants import G_SI, C_SI, MSUN_SI
+from gwmlt.core.sources import JFrameSpins, LFrameSpins
 
 
 # L and J frame interconversion functions ---------------------------------------------------------
@@ -16,7 +16,7 @@ from ..core.sources import JFrameSpins, LFrameSpins
 def convert_jframe_to_lframe(
         mass_1 : float, mass_2 : float,
         spins_jframe : JFrameSpins,
-        f_ref   : float = config.waveform.f_ref,
+        f_ref   : float | None = None,
         phi_ref : float = 0.0
     ) -> LFrameSpins :
 
@@ -42,6 +42,8 @@ def convert_jframe_to_lframe(
     LFrameSpins
         Spins in the L-frame.
     """
+
+    if f_ref is None : f_ref = config.waveform.f_ref
 
     inclination, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z = (
         lalsimulation.SimInspiralTransformPrecessingNewInitialConditions(
@@ -73,7 +75,7 @@ def convert_jframe_to_lframe(
 def convert_lframe_to_jframe(
         mass_1 : float, mass_2 : float,
         spins_lframe : LFrameSpins,
-        f_ref   : float = config.waveform.f_ref,
+        f_ref   : float | None = None,
         phi_ref : float = 0.0
     ) -> JFrameSpins :
 
@@ -99,6 +101,8 @@ def convert_lframe_to_jframe(
     JFrameSpins
         Spins in the J-frame.
     """
+
+    if f_ref is None : f_ref = config.waveform.f_ref
 
     thetajn, phijl, s1pol, s2pol, s12_deltaphi, spin1_a, spin2_a = (
         lalsimulation.SimInspiralTransformPrecessingWvf2PE(
