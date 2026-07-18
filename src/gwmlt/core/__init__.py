@@ -4,7 +4,7 @@ Data Structs
 
 from .sources import BBHSystem
 from .morphologies import Quasicircular, Eccentric, Lensed
-from .observatories import LVK, Decihertz
+from .observatories import GroundBased, Decihertz
 
 __all__ = [
     "BBHSystem",
@@ -13,6 +13,6 @@ __all__ = [
     "Eccentric",
     "Lensed",
 
-    "LVK",
+    "GroundBased",
     "Decihertz",
 ]
