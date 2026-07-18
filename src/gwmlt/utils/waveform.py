@@ -133,11 +133,17 @@ def imrphenom_fillen_initconds(
     Note
     ----
     This function internally uses IMRPhenomD to estimate the filter length, 
-    but is specifically made keeping IMRPhenomXO4a in mind.
+    but it is applicable for IMRPhenomXO4a as well.
     """
+
+    # Calibrate requested waveform duration for IMRPhenomXO4a
+    calibrated_waveform_duration = waveform_duration / 0.9
 
     def waveform_duration_error(f_start) :
         sig_len = get_waveform_filter_length_in_time(
+            # Since IMRPhenomXO4a does not support the 
+            # `get_waveform_filter_length_in_time` function, 
+            # we use IMRPhenomD as a proxy.
             approximant = "IMRPhenomD", 
             mass1   = mass_1, 
             mass2   = mass_2, 
@@ -145,7 +151,7 @@ def imrphenom_fillen_initconds(
             spin2z  = chi2z, 
             f_lower = f_start,
         )
-        return sig_len - waveform_duration
+        return sig_len - calibrated_waveform_duration
     
     f_start = root_scalar(
         waveform_duration_error,
