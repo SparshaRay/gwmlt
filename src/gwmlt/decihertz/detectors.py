@@ -20,6 +20,7 @@ class IndIGO_D :
     Detector class for the Heliocentric configuration of the IndIGO-D detector.
     Duck-typed to be compatible with the `project_wave` method of PyCBC `Detector` class.
     Assumes stationary detector and long wavelength approximation (LWA) for the projection.
+    Based on : https://arxiv.org/pdf/2601.06956
     """
 
     def __init__(self, 

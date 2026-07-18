@@ -3,10 +3,7 @@ Physics Utilities
 """
 
 import numpy as np
-from scipy.signal import find_peaks
-
 import lalsimulation
-from pycbc.types.timeseries import TimeSeries
 
 from ..config import config
 from ..constants import G_SI, C_SI, MSUN_SI
@@ -129,7 +126,7 @@ def convert_lframe_to_jframe(
     )
 
 
-# Dimensionless and dimensionful conversion classes -----------------------------------------------
+# Dimensionless and physical interconversion classes ----------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
 class DimfulToDimless :
