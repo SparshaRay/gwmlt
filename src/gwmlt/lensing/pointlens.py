@@ -5,11 +5,10 @@ Lensing by Isolated Point-mass Lenses
 import numpy as np
 from scipy.special import loggamma
 
-from ..core.morphologies import Lensed
-from ..constants import C_SI, G_SI, MSUN_SI
+from gwmlt.constants import C_SI, G_SI, MSUN_SI
 
 
-# Kummer’s function -----------------------------------------------------------
+# Kummer’s function -------------------------------------------------------------------------------
 
 from juliacall import Main as julia
 
@@ -27,7 +26,7 @@ confluent hypergeometric function of the first kind.
 """
 
 
-# Images ----------------------------------------------------------------------
+# Images ------------------------------------------------------------------------------------------
 
 def _x_minima(y):
     """Returns the image position for the minima (type I) image."""
@@ -46,20 +45,19 @@ def _magnification_saddle(y):
     return 1 / 2 - (y**2 + 2) / (2 * y * np.sqrt(y**2 + 4))
 
 
-# Time delay ------------------------------------------------------------------
+# Time delay --------------------------------------------------------------------------------------
 
 def _time_delay_dimensionless(y):
     """Returns the dimensionless time-delay between the two micro-images."""
     sqrt_term = np.sqrt(y**2 + 4)
     return (y * sqrt_term) / 2.0 + np.log((sqrt_term + y) / (sqrt_term - y))
 
-# Expose if necessary
+# Primary time delay user entry point function
 def time_delay(
     ml : float,
     y  : float,
     zl : float = 0
 ) -> float :
-
     """
     Returns the dimensionful time-delay between the two micro-images in seconds.
 
@@ -78,28 +76,10 @@ def time_delay(
         Time-delay between the two micro-images in seconds.
     
     """
-
     return (4 * G_SI * MSUN_SI * ml * (1 + zl) / C_SI**3) * _time_delay_dimensionless(y)
 
-# Primary time delay user entry point function
-def lensing_time_delay(morphology: Lensed) -> float :
-    """
-    Returns the time-delay between the two micro-images for a given lensing morphology.
 
-    Parameters
-    ----------
-    morphology : Lensed
-        The lensing morphology containing lensing parameters.
-
-    Returns
-    -------
-    float
-        Time-delay between the two micro-images in seconds.
-    """
-    return time_delay(morphology.m_lens, morphology.y_lens, morphology.z_lens)
-
-
-# Frequency conversions -------------------------------------------------------
+# Frequency conversions ---------------------------------------------------------------------------
 
 F_CONST = 8.0 * np.pi * G_SI * MSUN_SI / C_SI**3
 
@@ -112,7 +92,7 @@ def _f_of_w(w, ml, zl=0):
     return w / (F_CONST * ml * (1 + zl))
 
 
-# Regime transition cutoffs ---------------------------------------------------
+# Regime transition cutoffs -----------------------------------------------------------------------
 # Only valid for y in (0.01, 5.00)
 
 def _w_cutoff_geometric(y):
@@ -140,7 +120,7 @@ def _w_cutoff_quasigeometric_tolerance_1p0(y):
     return 4 * (y**-1.0) - np.log(y) / 5.0
 
 
-# Lensing amplification in different regimes ----------------------------------
+# Lensing amplification in different regimes ------------------------------------------------------
 
 def _Fw_geometric_optics(w, y):
     """Amplification factor F(w) under the Geometric Optics approximation."""
@@ -209,7 +189,7 @@ def Ff_exact(f, ml, y, zl=0):
     return _Fw_exact(_w_of_f(f, ml, zl), y)
 
 
-# Lensing Amplification Factor with Hybrid Regime Switching -------------------
+# Lensing Amplification Factor with Hybrid Regime Switching ---------------------------------------
 
 def _Fw_hybrid(w, y):
     """
@@ -250,8 +230,7 @@ def Ff_hybrid(
     ml : float,
     y  : float,
     zl : float = 0
-) -> float | np.typing.NDArray[np.complex128] :
-    
+) -> complex | np.typing.NDArray[np.complex128] :
     """
     Numerically stable evaluation of the point-lens amplification factor F(f)
     for given dimensionful frequencies f, lens mass, lens redshift, and impact parameter.
@@ -269,8 +248,7 @@ def Ff_hybrid(
 
     Returns
     -------
-    float or array_like
+    complex or array_like
         Complex amplification factor F(f) for the given parameters.
     """
-
     return _Fw_hybrid(_w_of_f(f, ml, zl), y)

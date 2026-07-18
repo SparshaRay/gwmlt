@@ -3,17 +3,61 @@ Apply Lensing Effects on TD Waveforms
 """
 
 import numpy as np
+from plum import dispatch
 from pycbc.types.timeseries import TimeSeries
 
-from ..core.morphologies import Lensed
-from .pointlens import Ff_hybrid, time_delay
+from gwmlt.core.morphologies import LensedProtocol
+from gwmlt.core.timeseries import Polarizations
+from gwmlt.lensing.pointlens import Ff_hybrid, time_delay
 
 
+@dispatch
 def apply_lensing(
-    hp: TimeSeries,
-    hc: TimeSeries,
-    morphology: Lensed
-) -> tuple[TimeSeries, TimeSeries] :
+    polarizations : Polarizations,
+    lens : LensedProtocol
+) -> Polarizations :
+
+    """
+    Apply lensing effects on Polarizations state object.
+
+    Parameters
+    ----------
+    polarizations : Polarizations
+        The Polarizations state object containing the h_plus and h_cross timeseries.
+    lens : LensedProtocol or child thereof
+        The lensing struct containing the lensing parameters.
+
+    Returns
+    -------
+    Polarizations
+        The lensed Polarizations state object.
+    """
+
+    lensed_hp, lensed_hc, td = apply_lensing(
+        polarizations.hp,
+        polarizations.hc,
+        lens.m_lens,
+        lens.y_lens,
+        lens.z_lens,
+    )
+
+    return Polarizations(
+        hp = lensed_hp,
+        hc = lensed_hc,
+        geocent_time    = polarizations.geocent_time,
+        generation_pars = polarizations.generation_pars,
+        lensing_time_delay = td
+    )
+
+
+@dispatch
+def apply_lensing(
+    hp : TimeSeries,
+    hc : TimeSeries,
+    ml : float,
+    y  : float,
+    zl : float = 0.0
+) -> tuple[TimeSeries, TimeSeries, float] :
 
     """
     Apply lensing effects on the input TD waveforms.
@@ -24,21 +68,22 @@ def apply_lensing(
         The h_plus timeseries.
     hc : TimeSeries
         The h_cross timeseries.
-    morphology : Lensed
-        The lensing morphology containing lensing parameters.
+    ml : float
+        The lens mass in solar masses.
+    y : float
+        The impact parameter (dimensionless).
+    zl : float, optional
+        The lens redshift. Default is 0.
 
     Returns
     -------
-    tuple[TimeSeries, TimeSeries]
-        A tuple containing the lensed h_plus and h_cross timeseries.
+    tuple[TimeSeries, TimeSeries, float]
+        A tuple containing the lensed h_plus and lensed h_cross timeseries 
+        and the lensing time delay.
     """
 
     hp = hp.copy()
     hc = hc.copy()
-
-    ml = morphology.m_lens
-    y  = morphology.y_lens
-    zl = morphology.z_lens
 
     td = time_delay(ml, y, zl)
 
@@ -61,4 +106,4 @@ def apply_lensing(
     lensed_hp = lensed_hp_tilde.to_timeseries()
     lensed_hc = lensed_hc_tilde.to_timeseries()
 
-    return lensed_hp, lensed_hc
+    return lensed_hp, lensed_hc, td

@@ -2,8 +2,8 @@
 Lensing Routines
 """
 
-from .pointlens import lensing_time_delay
-from .transform import apply_lensing
+from gwmlt.lensing.pointlens import time_delay as lensing_time_delay
+from gwmlt.lensing.transform import apply_lensing
 
 __all__ = [
     "lensing_time_delay",
