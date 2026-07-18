@@ -7,7 +7,7 @@ import lalsimulation
 
 from ..config import config
 from ..constants import G_SI, C_SI, MSUN_SI
-from ..core.sources import BBHSystem
+from ..core.sources import JFrameSpins, LFrameSpins
 
 
 # L and J frame interconversion functions ---------------------------------------------------------
@@ -15,10 +15,10 @@ from ..core.sources import BBHSystem
 
 def convert_jframe_to_lframe(
         mass_1 : float, mass_2 : float,
-        spins_jframe : BBHSystem.JFrameSpins,
+        spins_jframe : JFrameSpins,
         f_ref   : float = config.waveform.f_ref,
         phi_ref : float = 0.0
-    ) -> BBHSystem.LFrameSpins :
+    ) -> LFrameSpins :
 
     """
     Convert spins from the J-frame to the L-frame.
@@ -29,7 +29,7 @@ def convert_jframe_to_lframe(
         Mass of the first object (in solar masses).
     mass_2 : float
         Mass of the second object (in solar masses).
-    spins_jframe : BBHSystem.JFrameSpins
+    spins_jframe : JFrameSpins
         Spins in the J-frame.
     f_ref : float, optional
         Reference frequency (in Hz) for spin values. 
@@ -39,7 +39,7 @@ def convert_jframe_to_lframe(
 
     Returns
     -------
-    BBHSystem.LFrameSpins
+    LFrameSpins
         Spins in the L-frame.
     """
 
@@ -59,7 +59,7 @@ def convert_jframe_to_lframe(
         )
     )
     
-    return BBHSystem.LFrameSpins(
+    return LFrameSpins(
         inclination=inclination,
         spin1x=spin1x,
         spin1y=spin1y,
@@ -72,10 +72,10 @@ def convert_jframe_to_lframe(
 
 def convert_lframe_to_jframe(
         mass_1 : float, mass_2 : float,
-        spins_lframe : BBHSystem.LFrameSpins,
+        spins_lframe : LFrameSpins,
         f_ref   : float = config.waveform.f_ref,
         phi_ref : float = 0.0
-    ) -> BBHSystem.JFrameSpins :
+    ) -> JFrameSpins :
 
     """
     Convert spins from the L-frame to the J-frame.
@@ -86,7 +86,7 @@ def convert_lframe_to_jframe(
         Mass of the first object (in solar masses).
     mass_2 : float
         Mass of the second object (in solar masses).
-    spins_lframe : BBHSystem.LFrameSpins
+    spins_lframe : LFrameSpins
         Spins in the L-frame.
     f_ref : float, optional
         Reference frequency (in Hz) for spin values. 
@@ -96,7 +96,7 @@ def convert_lframe_to_jframe(
     
     Returns
     -------
-    BBHSystem.JFrameSpins
+    JFrameSpins
         Spins in the J-frame.
     """
 
@@ -115,7 +115,7 @@ def convert_lframe_to_jframe(
             phi_ref,
         )
     )
-    return BBHSystem.JFrameSpins(
+    return JFrameSpins(
         a_1    = spin1_a,
         a_2    = spin2_a,
         tilt_1 = s1pol,
