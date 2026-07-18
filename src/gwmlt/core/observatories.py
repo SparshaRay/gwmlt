@@ -35,6 +35,18 @@ class Observatory :
         Sets upper bound of frequency range for all analyses at the Nyquist frequency.
     wf_gen_srate : float
         Internal sampling rate for the TD waveform generation (in Hz).
+    
+    Attributes
+    ----------
+    resolved_paths : dict
+        A map of detector names to their respective noise file paths
+    active_detectors : list of str
+        A list of the active detectors in the observatory network.
+    
+    Note
+    ----
+    If `detector_list` is None, it defaults to all detectors available for the specified noise psd.
+    Otherwise, `noise_psds` and `detector_list` must be broadcastable to a common shape.
     """
 
     noise_psds    : list[str | Path | None]
@@ -85,8 +97,10 @@ class GroundBased(Observatory) :
     Attributes
     ----------
     resolved_paths : dict
-        A map of detector names to their noise file Path: 
+        A map of detector names to their respective noise file paths: 
         { 'H1': Path(...), 'L1': Path(...) }
+    active_detectors : list of str
+        A list of the active detectors in the observatory network.
 
     Note
     ----
@@ -137,8 +151,10 @@ class Decihertz(Observatory) :
     Attributes
     ----------
     resolved_paths : dict
-        A map of detector names to their noise file Path: 
+        A map of detector names to their respective noise file paths: 
         { 'IndIGO-D': Path(...) }
+    active_detectors : list of str
+        A list of the active detectors in the observatory network.
 
     Note
     ----
