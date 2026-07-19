@@ -11,10 +11,15 @@ from gwmlt.config.base import PROJECT_ROOT, TEOBRESUMS_FITS
 from gwmlt.config.noise import NoiseConfig
 from gwmlt.config.waveform import WaveformConfig
 from gwmlt.config.injection import InjectionConfig
+from gwmlt.config.cosmology import CosmologyConfig
 
 
 @dataclass(frozen=True)
 class GlobalConfig :
+    """
+    Struct for global configuration settings for the GWMLT library.
+    """
+
     waveform: WaveformConfig = field(default_factory=WaveformConfig)
     """Configuration for waveform generation"""
     
@@ -23,6 +28,9 @@ class GlobalConfig :
 
     injection: InjectionConfig = field(default_factory=InjectionConfig)
     """Configuration for injection timeseries"""
+
+    cosmology: CosmologyConfig = field(default_factory=CosmologyConfig)
+    """Configuration for cosmology constants"""
 
     teobresums_fits_path: Path = TEOBRESUMS_FITS
     """Path to the TEOBResumS evolution fits file."""
@@ -36,6 +44,7 @@ class GlobalConfig :
 
 # Instantiate the global configuration instance
 config = GlobalConfig()
+"""Global configuration instance for the GWMLT library."""
 
 
 # Context manager to temporarily override global configuration variables
