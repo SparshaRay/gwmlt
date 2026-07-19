@@ -9,6 +9,7 @@ from gwmlt.constants import C_SI, G_SI, MSUN_SI
 
 
 # Kummer’s function -------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 from juliacall import Main as julia
 
@@ -27,6 +28,7 @@ confluent hypergeometric function of the first kind.
 
 
 # Images ------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 def _x_minima(y):
     """Returns the image position for the minima (type I) image."""
@@ -46,6 +48,7 @@ def _magnification_saddle(y):
 
 
 # Time delay --------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 def _time_delay_dimensionless(y):
     """Returns the dimensionless time-delay between the two micro-images."""
@@ -80,6 +83,7 @@ def time_delay(
 
 
 # Frequency conversions ---------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 F_CONST = 8.0 * np.pi * G_SI * MSUN_SI / C_SI**3
 
@@ -93,7 +97,9 @@ def _f_of_w(w, ml, zl=0):
 
 
 # Regime transition cutoffs -----------------------------------------------------------------------
-# Only valid for y in (0.01, 5.00)
+# -------------------------------------------------------------------------------------------------
+
+# All of these cutoffs are only valid for y in (0.01, 5.00)
 
 def _w_cutoff_geometric(y):
     """Dimensionless cutoff frequency where Geometric optics error < 0.1%."""
@@ -121,6 +127,7 @@ def _w_cutoff_quasigeometric_tolerance_1p0(y):
 
 
 # Lensing amplification in different regimes ------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 def _Fw_geometric_optics(w, y):
     """Amplification factor F(w) under the Geometric Optics approximation."""
@@ -190,6 +197,7 @@ def Ff_exact(f, ml, y, zl=0):
 
 
 # Lensing Amplification Factor with Hybrid Regime Switching ---------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 def _Fw_hybrid(w, y):
     """

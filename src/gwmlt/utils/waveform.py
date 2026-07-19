@@ -13,6 +13,7 @@ from gwmlt.eccentric.analytic import ecc_from_envelop_freqs
 
 
 # Frequency and phase evolution analysis ----------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 def pols_to_freq_features(
     hp : TimeSeries,
@@ -101,6 +102,7 @@ def pols_to_freq_features(
 
 
 # IMRPhenom family initial conditions -------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 def imrphenom_fillen_initconds(
     mass_1 : float, mass_2 : float,
