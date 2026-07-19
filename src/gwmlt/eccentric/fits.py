@@ -14,7 +14,7 @@ from scipy.interpolate import RBFInterpolator
 from scipy.optimize import root_scalar
 
 from gwmlt.config import config
-from gwmlt.utils.physics import DimfulToDimless, DimlessToDimful
+from gwmlt.utils.physics import PhysicalToDimensionless, DimensionlessToPhysical
 from gwmlt.eccentric.analytic import ecc_from_envelop_freqs
 
 
@@ -176,7 +176,7 @@ class AnisotropicTEFPhenom :
 _interpolators = {}
 _current_teobresums_fits_path = None
 
-# The whole interpolator initialization is wrapped in a function for 
+# The whole interpolator initialization is wrapped in a getter for 
 # integrating nicely with the config_override context manager
 
 def get_interpolators() :
@@ -292,11 +292,14 @@ def teobresumsfits_tau_at_fbar(
     All logarithms are base 10.
     """
 
-    orbavg_poly = get_interpolators()['log_f_orbavg_bar_interpolator'].poly(log_sig_tau, ecc_start, chi_eff)
+    log_f_orbavg_bar_interpolator = get_interpolators()['log_f_orbavg_bar_interpolator']
+    orbavg_poly = log_f_orbavg_bar_interpolator.poly(log_sig_tau, ecc_start, chi_eff)
+
     all_roots   = (orbavg_poly - log_fbar).roots()
     real_roots  = all_roots[np.isreal(all_roots)].real
+
     if len(real_roots) == 0 : raise ValueError("No real roots found for the given parameters.")
-    interp_low  = get_interpolators()['log_f_orbavg_bar_interpolator'].poly_interp_low
+    interp_low  = log_f_orbavg_bar_interpolator.poly_interp_low
     valid_root  = real_roots[np.all([real_roots>=interp_low, real_roots<=log_sig_tau], axis=0)]
 
     if len(valid_root) == 1 : return valid_root[0]
@@ -358,13 +361,15 @@ def teobresumsfits_ecc_at_fbar(
     ----
     All logarithms are base 10.
     """
+
+    interpolators = get_interpolators()
     
     tau = teobresumsfits_tau_at_fbar(
         log_sig_tau, ecc_start, chi_eff, log_fbar, 
         extrapolate=extrapolate, suppress_warnings=suppress_warnings
     )
-    f_peri_bar = 10 ** get_interpolators()['log_f_peri_bar_interpolator'].poly(log_sig_tau, ecc_start, chi_eff)(tau)
-    f_apos_bar = 10 ** get_interpolators()['log_f_apos_bar_interpolator'].poly(log_sig_tau, ecc_start, chi_eff)(tau)
+    f_peri_bar = 10 ** interpolators['log_f_peri_bar_interpolator'].poly(log_sig_tau, ecc_start, chi_eff)(tau)
+    f_apos_bar = 10 ** interpolators['log_f_apos_bar_interpolator'].poly(log_sig_tau, ecc_start, chi_eff)(tau)
     return ecc_from_envelop_freqs(f_apos_bar, f_peri_bar)
 
 
@@ -413,7 +418,9 @@ def teobresumsfits_initial_conditions(
     If extrapolate is set to False, log_f_ref_bar must be reached after 
     the start time. Set extrapolate to True to enable backwards interpolation.
     """
-    
+
+    interpolators = get_interpolators()
+
     # Find the starting eccentricity for which we will get the 
     # reference eccentricity at the reference frequency.
     def ecc_error(ecc_start) :
@@ -426,13 +433,13 @@ def teobresumsfits_initial_conditions(
     
     # Since ecc is the 2nd argument (or coordinate) of the interpolators, 
     # we can use the min and max values of the 2nd argument as the bracket for root finding.
-    ecc_bracket = [get_interpolators()['log_f_orbavg_bar_interpolator'].p_min[1], 
-                   get_interpolators()['log_f_orbavg_bar_interpolator'].p_max[1]]
+    ecc_bracket = [interpolators['log_f_orbavg_bar_interpolator'].p_min[1], 
+                   interpolators['log_f_orbavg_bar_interpolator'].p_max[1]]
     
     try : ecc_start = root_scalar(ecc_error, bracket=ecc_bracket, method='brentq').root
     except ValueError as e : raise ValueError(f"Initial conditions failed: {e}")
     
-    required_log_fbar_start = get_interpolators()['log_f_orbavg_bar_interpolator'](
+    required_log_fbar_start = interpolators['log_f_orbavg_bar_interpolator'](
         [log_sig_tau, ecc_start, chi_eff])[-1] # Fetch the last index, i.e. starting freq anchor point
     
     # Verify the results
@@ -450,7 +457,7 @@ def teobresumsfits_initial_conditions(
     # Since TEOBResumS don't start the waveform at the requested f_start, 
     # we need to find an starting frequency that will give us our desired f_start.
     def f_calib_error(requested_log_fbar_start) :
-        measured_log_fbar_start = get_interpolators()['log_f_calib_bar_interpolator'](
+        measured_log_fbar_start = interpolators['log_f_calib_bar_interpolator'](
             [requested_log_fbar_start, ecc_start, chi_eff])
         return measured_log_fbar_start - required_log_fbar_start
     
@@ -512,7 +519,7 @@ def teobresumsfits_generalized_initconds(
     eta     = (mass_1 * mass_2) / ((mass_1 + mass_2)**2)
     chi_eff = (mass_1*chi1z + mass_2*chi2z) / (mass_1 + mass_2)
 
-    to_dimensionless = DimfulToDimless(mass_1, mass_2)
+    to_dimensionless = PhysicalToDimensionless(mass_1, mass_2)
     f_ref_bar = to_dimensionless.get_dimless_frequency(f_ref)
     sig_tau   = to_dimensionless.get_dimless_time(waveform_duration)
 
@@ -530,8 +537,8 @@ def teobresumsfits_generalized_initconds(
         extrapolate=extrapolate
     )
 
-    to_physical = DimlessToDimful(mass_1 + mass_2)
+    to_physical = DimensionlessToPhysical(mass_1 + mass_2)
     f_start_bar = 10 ** log_f_start_bar
-    f_start     = to_physical.get_dimful_frequency(f_start_bar)
+    f_start     = to_physical.get_physical_frequency(f_start_bar)
 
     return ecc_start, f_start
