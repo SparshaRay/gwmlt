@@ -30,7 +30,6 @@ dependencies = [
 
     # Miscellaneous
     "juliacall",
-    "plum-dispatch",
     "tqdm",
     "notebook",
 ]
