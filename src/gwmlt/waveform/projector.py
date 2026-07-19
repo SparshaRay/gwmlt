@@ -4,28 +4,23 @@ Project GW Polarizations onto Detectors
 
 from warnings import warn
 
-import numpy as np
-from fractions import Fraction
-from scipy.signal import resample_poly
-
 from pycbc.types.timeseries import TimeSeries
 from pycbc.detector import Detector, get_available_detectors
 from pycbc.filter import resample_to_delta_t
 
-from ..core.sources import BBHSystem
-from ..core.observatories import LVK, Decihertz
-from ..decihertz.detectors import IndIGO_D
+from gwmlt.core.observatories import Observatory
+from gwmlt.decihertz.detectors import IndIGO_D
 
 
 def project_waveform(
-    hp: TimeSeries,
-    hc: TimeSeries,
-    source: BBHSystem,
-    observatory: LVK | Decihertz,
+    hp : TimeSeries,
+    hc : TimeSeries,
+    ra : float, dec : float, psi : float,
+    observatory: Observatory,
 ) -> dict[str, tuple[TimeSeries, float]] :
 
     """
-    Project the polarization timeseries onto the observatory detectors.
+    Project the polarization timeseries onto the observatory detectors to get strain.
 
     Parameters
     ----------
@@ -33,10 +28,14 @@ def project_waveform(
         The h_plus polarization timeseries.
     hc : TimeSeries
         The h_cross polarization timeseries.
-    source : BBHSystem
-        The source parameters of the binary black hole system.
-    observatory : LVK | Decihertz
-        The observatory parameters.
+    ra : float
+        Right ascension of the source in radians.
+    dec : float
+        Declination of the source in radians.
+    psi : float
+        Polarization angle of the source in radians.
+    observatory : Observatory
+        An observatory dataclass containing the active detectors and target sample rate.
 
     Returns
     -------
@@ -48,6 +47,8 @@ def project_waveform(
     hp = hp.copy()
     hc = hc.copy()
 
+    geocent_time = float(hp.start_time + hp.end_time) / 2.0
+
     projected_strains = {}
     pycbc_detectors = get_available_detectors()
     
@@ -58,14 +59,11 @@ def project_waveform(
             det = Detector(detector_str)
         elif detector_str == "IndIGO-D" :
             det = IndIGO_D()
-        else :
-            raise NotImplementedError(
-                f"Detector {detector_str} is not implemented in PyCBC or the custom Decihertz detectors."
-            )
+        else : raise NotImplementedError(f"Detector {detector_str} is not implemented in PyCBC or the custom Decihertz detectors.")
         
         # Project the waveform onto the detector
-        strain = det.project_wave(hp, hc, source.ra, source.dec, source.psi)
-        geocenter_td = det.time_delay_from_earth_center(source.ra, source.dec, float(source.geocent_time))
+        strain = det.project_wave(hp, hc, ra, dec, psi)
+        geocenter_td = det.time_delay_from_earth_center(ra, dec, geocent_time)
         
         # If the strain is already at the desired sampling rate, no resampling is needed
         if strain.sample_rate == observatory.sample_rate : projected_strains[detector_str] = (strain, geocenter_td)
