@@ -9,7 +9,7 @@ from scipy.optimize import root_scalar
 from pycbc.types.timeseries import TimeSeries
 from pycbc.waveform import get_waveform_filter_length_in_time
 
-from ..eccentric.analytic import ecc_from_envelop_freqs
+from gwmlt.eccentric.analytic import ecc_from_envelop_freqs
 
 
 # Frequency and phase evolution analysis ----------------------------------------------------------

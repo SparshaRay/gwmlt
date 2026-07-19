@@ -7,10 +7,10 @@ from contextlib import contextmanager
 from typing import Any, Generator
 from pathlib import Path
 
-from .base import PROJECT_ROOT, TEOBRESUMS_FITS
-from .noise import NoiseConfig
-from .waveform import WaveformConfig
-from .injection import InjectionConfig
+from gwmlt.config.base import PROJECT_ROOT, TEOBRESUMS_FITS
+from gwmlt.config.noise import NoiseConfig
+from gwmlt.config.waveform import WaveformConfig
+from gwmlt.config.injection import InjectionConfig
 
 
 @dataclass(frozen=True)

@@ -2,10 +2,8 @@
 Eccentricity Related Functions and Tools
 """
 
-from .analytic import ecc_from_envelop_freqs
-from .fits import teobresumsfits_generalized_initconds
+from gwmlt.eccentric.analytic import ecc_from_envelop_freqs
 
 __all__ = [
     "ecc_from_envelop_freqs",
-    "teobresumsfits_generalized_initconds"
 ]

@@ -5,7 +5,7 @@ PSD and Real Noise File Paths
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .base import NOISE_DATA_DIR
+from gwmlt.config.base import NOISE_DATA_DIR
 
 @dataclass(frozen=True)
 class NoiseConfig :

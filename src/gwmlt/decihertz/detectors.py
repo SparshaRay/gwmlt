@@ -11,7 +11,7 @@ from astropy import units as u
 
 from pycbc.types.timeseries import TimeSeries
 
-from ..constants import C_SI, AU_SI
+from gwmlt.constants import C_SI, AU_SI
 
 
 class IndIGO_D :

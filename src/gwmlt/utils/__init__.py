@@ -2,15 +2,14 @@
 Misc Utils
 """
 
-from .physics import pols_to_freq_features
-from .waveform import imrphenom_fillen_initconds as imrphenom_initconds
-
 # For API readability expose to public namespace under utils with simplified alias
-from ..eccentric.fits import teobresumsfits_generalized_initconds \
-                          as teobresums_initconds
+# Bad practice, figure out a better way to do this later
+from gwmlt.eccentric.fits import teobresumsfits_generalized_initconds as teobresums_initconds
+
+from gwmlt.utils.waveform import pols_to_freq_features, imrphenom_fillen_initconds as imrphenom_initconds
 
 __all__ = [
-    "pols_to_freq_features",
     "teobresums_initconds",
     "imrphenom_initconds",
+    "pols_to_freq_features" 
 ]

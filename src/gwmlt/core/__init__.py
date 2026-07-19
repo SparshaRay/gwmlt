@@ -2,9 +2,9 @@
 Data Structs
 """
 
-from .sources import BBHSystem
-from .morphologies import Quasicircular, Eccentric, Lensed
-from .observatories import GroundBased, Decihertz
+from gwmlt.core.sources import BBHSystem
+from gwmlt.core.morphologies import Quasicircular, Eccentric, Lensed
+from gwmlt.core.observatories import GroundBased, Decihertz
 
 __all__ = [
     "BBHSystem",
