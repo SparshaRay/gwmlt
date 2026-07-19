@@ -2,8 +2,8 @@
 Noise Generation and SNR Calculation
 """
 
-from .inject import inject_with_snr
+from .inject import inject_noise
 
 __all__ = [
-    "inject_with_snr"
+    "inject_noise"
 ]

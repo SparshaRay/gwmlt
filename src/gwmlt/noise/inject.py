@@ -12,17 +12,17 @@ from pycbc.psd import interpolate, inverse_spectrum_truncation
 from pycbc.filter import sigma, matched_filter
 from lal import LIGOTimeGPS
 
-from ..config import config
-from .sampler import sample_gaussian_noise, sample_real_noise
+from gwmlt.config import config
+from gwmlt.noise.sampler import sample_gaussian_noise, sample_real_noise
 
 
-def inject_with_snr(
+def inject_noise(
     sig_ts : TimeSeries,
     noise_file_path : Path | None,
-    geocent_time : LIGOTimeGPS,
-    geocent_td_pad_for_det : str | None,
     f_low : float,
-    seed : int,
+    seed  : int,
+    injection_start_time : LIGOTimeGPS | None = None,
+    injection_end_time   : LIGOTimeGPS | None = None,
     snr_type : Literal['optimal', 'matched'] = 'optimal'
 ) -> tuple[TimeSeries, TimeSeries, float] :
     
@@ -32,19 +32,19 @@ def inject_with_snr(
     Parameters
     ----------
     sig_ts : TimeSeries
-        The strain timeseries to be injected.
+        The strain signal timeseries signal to be injected.
     noise_file_path : Path | None
         Path to the noise PSD or timeseries file. If None, no noise will be added.
-    geocent_time : LIGOTimeGPS
-        The geocenter trigger time of the signal.
-    geocent_td_pad_for_det : str or None
-        The name of the detector (e.g., 'H1', 'IndIGO-D', etc.) for which 
-        the geocenter to detector time delay padding duration is to be applied.
-        If None, no padding duration will be applied.
     f_low : float
         The low frequency cutoff for PSD, noise and SNR calculation.
     seed : int
         The seed for noise sampling.
+    injection_start_time : LIGOTimeGPS | None
+        The start time of the injection in GPS seconds. 
+        If None, defaults to the start time of the signal timeseries.
+    injection_end_time : LIGOTimeGPS | None
+        The end time of the injection in GPS seconds.
+        If None, defaults to the end time of the signal timeseries.
     snr_type : 'optimal' or 'matched', optional
         The type of SNR to calculate. 'optimal' calculates the optimal SNR (sigma) of the
         injected signal, while 'matched' calculates the matched filter SNR of the padded/cropped
@@ -57,47 +57,18 @@ def inject_with_snr(
         and the specified type of SNR.
     """
 
+    if injection_start_time is None : injection_start_time = sig_ts.start_time
+    if injection_end_time   is None : injection_end_time   = sig_ts.end_time 
+
     sample_rate = sig_ts.sample_rate
-    max_geocent_to_det_td = config.injection.max_geocent_to_det_td[geocent_td_pad_for_det]
-
-    # Calculate the start and end times for the final timeseries
-
-    start_time = (
-        geocent_time 
-        - max_geocent_to_det_td
-        - (
-            + config.injection.pre_merger_datapoints
-            + config.injection.correlation_grace_order / 2
-            + config.injection.highpass_fir_order      / 2
-            + config.injection.lowpass_fir_order       / 2
-            + config.injection.whiten_filter_order     / 2
-            + config.injection.safety_padding          / 2
-        ) / sample_rate
-    )
-
-    end_time = (
-        geocent_time
-        + max_geocent_to_det_td
-        + (
-            max(
-                config.injection.post_merger_datapoints,
-                config.injection.correlation_grace_order / 2
-            )
-            + config.injection.highpass_fir_order        / 2
-            + config.injection.lowpass_fir_order         / 2
-            + config.injection.whiten_filter_order       / 2
-            + config.injection.safety_padding            / 2
-        ) / sample_rate
-    )
-
 
     # If no noise file is provided, just return padded and/or cropped copy of the signal
     if noise_file_path is None :
 
         noise_ts = TimeSeries(
-            np.zeros(int((end_time - start_time) * sample_rate)),
+            np.zeros(int((injection_end_time - injection_start_time) * sample_rate)),
             delta_t = 1.0 / sample_rate,
-            epoch = start_time
+            epoch = injection_start_time
         )
 
         injected_ts = noise_ts.inject(sig_ts)
@@ -110,8 +81,8 @@ def inject_with_snr(
     elif noise_file_path.suffix == '.npz' :
         noise_ts, psd = sample_gaussian_noise(
             file_path = noise_file_path,
-            start_time = start_time,
-            end_time = end_time,
+            start_time = injection_start_time,
+            end_time = injection_end_time,
             sample_rate = sample_rate,
             f_low = f_low,
             seed = seed
@@ -121,14 +92,14 @@ def inject_with_snr(
     elif noise_file_path.suffix == '.hdf5' :
         noise_ts, psd = sample_real_noise(
             file_path = noise_file_path,
-            start_time = start_time,
-            end_time = end_time,
+            start_time = injection_start_time,
+            end_time = injection_end_time,
             sample_rate = sample_rate,
             f_low = f_low,
             seed = seed
         )
     
-    # My Disappointment Is Immeasurable And My Day Is Ruined 
+    # Otherwise raise exception for unsupported noise file format 
     else :
         raise ValueError(
             f"Unsupported noise file format: '{noise_file_path.suffix}'. "
