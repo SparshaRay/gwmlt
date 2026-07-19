@@ -175,10 +175,10 @@ def generate_injections(
             sig_ts          = projected_strain,
             noise_file_path = observatory.resolved_paths[detector_str],
             f_low           = observatory.f_low,
-            seed            = seed,
             injection_start_time = injection_start_time,
             injection_end_time   = injection_end_time,
-            snr_type             = 'optimal'
+            snr_type = 'optimal',
+            seed = int.from_bytes(f"{seed}{detector_str}".encode("utf-8"), "big") % 2147483647,
         )
 
         detector_snrs.append(snr)

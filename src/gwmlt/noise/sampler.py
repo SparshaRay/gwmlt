@@ -139,13 +139,13 @@ def sample_real_noise(
             f"No timeseries segments exceed the requested length threshold of {ts_len}"
         )
 
-        df_valid['sampling_weight'] = df_valid['length'] - ts_len
+        df_valid['sampling_weight'] = df_valid['length'] - ts_len + 1
         selected_row = df_valid.sample(n=1, weights='sampling_weight', random_state=seed).iloc[0]
 
         ts_id, total_length = selected_row['ts_id'], selected_row['length']
 
         max_start_index = total_length - ts_len
-        start_index = np.random.RandomState(seed).randint(0, max_start_index+1)
+        start_index = np.random.default_rng(seed).integers(0, max_start_index+1)
 
         selected_ts = ts_group[f'ts_{ts_id:04d}'][start_index:start_index+ts_len]
     

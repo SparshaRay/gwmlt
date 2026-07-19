@@ -20,10 +20,10 @@ def inject_noise(
     sig_ts : TimeSeries,
     noise_file_path : Path | None,
     f_low : float,
-    seed  : int,
     injection_start_time : LIGOTimeGPS | None = None,
     injection_end_time   : LIGOTimeGPS | None = None,
-    snr_type : Literal['optimal', 'matched'] = 'optimal'
+    snr_type : Literal['optimal', 'matched'] = 'optimal',
+    seed : int = 0,
 ) -> tuple[TimeSeries, TimeSeries, float] :
     
     """
@@ -37,8 +37,6 @@ def inject_noise(
         Path to the noise PSD or timeseries file. If None, no noise will be added.
     f_low : float
         The low frequency cutoff for PSD, noise and SNR calculation.
-    seed : int
-        The seed for noise sampling.
     injection_start_time : LIGOTimeGPS | None
         The start time of the injection in GPS seconds. 
         If None, defaults to the start time of the signal timeseries.
@@ -49,6 +47,8 @@ def inject_noise(
         The type of SNR to calculate. 'optimal' calculates the optimal SNR (sigma) of the
         injected signal, while 'matched' calculates the matched filter SNR of the padded/cropped
         recovered signal with respect to the injected signal. Default is 'optimal'.
+    seed : int
+        The seed for noise sampling. Default is 0.
     
     Returns
     -------
