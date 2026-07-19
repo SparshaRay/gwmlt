@@ -2,7 +2,7 @@
 Utilities Related to Waveform Generation and Analysis
 """   
 
-from numpy import np
+import numpy as np
 from scipy.signal import find_peaks
 from scipy.optimize import root_scalar
 
