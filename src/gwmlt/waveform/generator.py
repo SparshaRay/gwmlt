@@ -5,11 +5,11 @@ PyCBC TD Waveform Generator
 from warnings import warn
 
 from pycbc.waveform import get_td_waveform
+from pycbc.types.timeseries import TimeSeries
 
 from gwmlt.core.sources import BinarySystem
 from gwmlt.core.morphologies import Morphology, EccentricProtocol
 from gwmlt.core.observatories import Observatory, GroundBased, Decihertz
-from gwmlt.core.timeseries import Polarizations
 from gwmlt.utils import imrphenom_initconds, teobresums_initconds
 from gwmlt.config import config
 
@@ -19,7 +19,7 @@ def generate_waveform(
     morphology: Morphology,
     observatory: Observatory | None,
     **override_kwargs
-) -> Polarizations :
+) -> tuple[TimeSeries, TimeSeries, dict] :
     
     """
     Generate the polarization (h_plus, h_cross) timeseries.
@@ -37,10 +37,9 @@ def generate_waveform(
 
     Returns
     -------
-    Polarizations
-        A dataclass containing the generated h_plus timeseries, the h_cross timeseries, 
-        the geocenter trigger time, and a dictionary containing the parameters 
-        passed to the PyCBC `get_td_waveform` function.
+    tuple[TimeSeries, TimeSeries, dict]
+        A tuple containing the generated h_plus timeseries, the h_cross timeseries, 
+        and a dictionary containing the parameters passed to the PyCBC `get_td_waveform` function.
     """
 
     pars = _get_pars(source, morphology, observatory, **override_kwargs)
@@ -60,12 +59,7 @@ def generate_waveform(
     hc.start_time += source.geocent_time
     
     # return hp, hc, pars
-    return Polarizations(
-        hp = hp,
-        hc = hc,
-        geocent_time = source.geocent_time,
-        generation_pars = pars
-    )
+    return hp, hc, pars
 
 
 def _get_pars(

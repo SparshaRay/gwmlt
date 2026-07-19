@@ -3,54 +3,11 @@ Apply Lensing Effects on TD Waveforms
 """
 
 import numpy as np
-from plum import dispatch
 from pycbc.types.timeseries import TimeSeries
 
-from gwmlt.core.morphologies import LensedProtocol
-from gwmlt.core.timeseries import Polarizations
 from gwmlt.lensing.pointlens import Ff_hybrid, time_delay
 
 
-@dispatch
-def apply_lensing(
-    polarizations : Polarizations,
-    lens : LensedProtocol
-) -> Polarizations :
-
-    """
-    Apply lensing effects on Polarizations state object.
-
-    Parameters
-    ----------
-    polarizations : Polarizations
-        The Polarizations state object containing the h_plus and h_cross timeseries.
-    lens : LensedProtocol or child thereof
-        The lensing struct containing the lensing parameters.
-
-    Returns
-    -------
-    Polarizations
-        The lensed Polarizations state object.
-    """
-
-    lensed_hp, lensed_hc, td = apply_lensing(
-        polarizations.hp,
-        polarizations.hc,
-        lens.m_lens,
-        lens.y_lens,
-        lens.z_lens,
-    )
-
-    return Polarizations(
-        hp = lensed_hp,
-        hc = lensed_hc,
-        geocent_time    = polarizations.geocent_time,
-        generation_pars = polarizations.generation_pars,
-        lensing_time_delay = td
-    )
-
-
-@dispatch
 def apply_lensing(
     hp : TimeSeries,
     hc : TimeSeries,
