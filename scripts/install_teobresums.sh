@@ -15,4 +15,4 @@ pip install --no-build-isolation ./Python
 pip install --no-build-isolation ./PyCBC
 
 echo "Successfully installed TEOBResumS"
-rm -rf build
+rm -rf ../../build
