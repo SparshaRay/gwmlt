@@ -8,28 +8,7 @@ import lalinference.imrtgr.nrutils as nr
 
 from gwmlt.config import config
 from gwmlt.constants import G_SI, C_SI, MSUN_SI
-from gwmlt.core.sources import JFrameSpins, LFrameSpins
-
-
-# ![NOTE] - Bilby and LAL/PyCBC parameter naming conventions and their equivalence :
-#
-# | Bilby Key           | PyCBC Key        |
-# |---------------------|------------------|
-# | mass_1              | mass1            |
-# | mass_2              | mass2            |
-# | spin_1x             | spin1x           |
-# | spin_1y             | spin1y           |
-# | spin_1z             | spin1z           |
-# | spin_2x             | spin2x           |
-# | spin_2y             | spin2y           |
-# | spin_2z             | spin2z           |
-# | iota                | inclination      |
-# | luminosity_distance | distance         |
-# | phase               | coa_phase        |
-# | psi                 | polarization     |
-# | geocent_time        | trigger_time     |
-# | approximant         | wf_approximant   |
-# | f_start             | f_lower          |
+from gwmlt.core.sources import JFrameSpins, LFrameSpins, BinarySystem
 
 
 # L and J frame interconversion functions ---------------------------------------------------------
@@ -151,106 +130,11 @@ def convert_lframe_to_jframe(
     )
 
 
-# Dimensionless and physical interconversion classes ----------------------------------------------
-# -------------------------------------------------------------------------------------------------
-
-class PhysicalToDimensionless :
-    """Class to convert physical quantities to dimensionless quantities."""
-
-    def __init__(self, mass_1: float, mass_2: float) -> None :
-        """
-        Initialize the PhysicalToDimensionless class.
-
-        Parameters
-        ----------
-        mass_1 : float
-            Mass of the first object (in solar masses).
-        mass_2 : float
-            Mass of the second object (in solar masses).
-        """
-        self.mass_1 = mass_1
-        self.mass_2 = mass_2
-        self.total_mass = mass_1 + mass_2
-        self.T_scale = (G_SI * self.total_mass * MSUN_SI) / (C_SI**3)
-        self.L_scale = (G_SI * self.total_mass * MSUN_SI) / (C_SI**2)
-
-    def get_mass_ratio(self) -> float :
-        """Get the mass ratio."""
-        return self.mass_1 / self.mass_2
-
-    def get_dimless_masses(self) -> tuple[float, float] :
-        """Get the dimensionless masses."""
-        return self.mass_1/self.total_mass, self.mass_2/self.total_mass
-    
-    def get_dimless_time(self, time: float | np.ndarray) -> float | np.ndarray :
-        """Convert time in seconds to dimensionless time."""
-        return time / self.T_scale
-    
-    def get_dimless_length(self, length: float | np.ndarray) -> float | np.ndarray :
-        """Convert length in meters to dimensionless length."""
-        return length / self.L_scale
-    
-    def get_dimless_frequency(self, frequency: float | np.ndarray) -> float | np.ndarray :
-        """Convert frequency in Hz to dimensionless frequency."""
-        return frequency * self.T_scale
-    
-    def get_dimless_Sz_from_chiz(self, chi1z: float, chi2z: float) -> tuple[float, float] :
-        """Convert dimensionless z spin to dimensionless z angular momenta."""
-        S1z_bar = chi1z * (self.mass_1 / self.total_mass)**2
-        S2z_bar = chi2z * (self.mass_2 / self.total_mass)**2
-        return S1z_bar, S2z_bar
-    
-
-class DimensionlessToPhysical :
-    """Class to convert dimensionless quantities to physical quantities."""
-
-    def __init__(self, total_mass : float) -> None :
-        """
-        Initialize the DimensionlessToPhysical class.
-
-        Parameters
-        ----------
-        total_mass : float
-            Total mass of the system (in solar masses).
-        """
-        self.total_mass = total_mass
-        self.T_scale = (G_SI * self.total_mass * MSUN_SI) / (C_SI**3)
-        self.L_scale = (G_SI * self.total_mass * MSUN_SI) / (C_SI**2)
-
-    def get_physical_masses(self, mass_ratio : float) -> tuple[float, float] :
-        """Get the binary solar masses from the mass ratio."""
-        # Assuming the convention of mass_ratio = m2/m1 <= 1.
-        m1 = self.total_mass / (1 + mass_ratio)
-        m2 = self.total_mass * mass_ratio / (1 + mass_ratio)
-        return m1, m2
-    
-    def get_physical_time(self, tau : float | np.ndarray) -> float | np.ndarray :
-        """Convert dimensionless time to time in seconds."""
-        return tau * self.T_scale
-    
-    def get_physical_length(self, length_bar : float | np.ndarray) -> float | np.ndarray :
-        """Convert dimensionless length to length in meters."""
-        return length_bar * self.L_scale
-    
-    def get_physical_frequency(self, frequency_bar : float | np.ndarray) -> float | np.ndarray :
-        """Convert dimensionless frequency to frequency in Hz."""
-        return frequency_bar / self.T_scale
-    
-    def get_chiz_from_dimless_Sz(
-        self, S1z_bar : float, S2z_bar : float, mass_ratio : float
-    ) -> tuple[float, float] :
-        """Convert dimensionless z angular momenta to dimensionless z spin."""
-        m1, m2 = self.get_physical_masses(mass_ratio)
-        chi1z = S1z_bar / (m1 / self.total_mass)**2
-        chi2z = S2z_bar / (m2 / self.total_mass)**2
-        return chi1z, chi2z
-    
-
 # Merger, ringdown, and remnant properties --------------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
 # All of these are taken from https://git.ligo.org/anuj.mishra/gwmat
-# Please cross check the these function before using them
+# Please verify these function before using them.
 
 def get_remnant_properties(m1, m2, a1=0.0, a2=0.0, tilt1=0.0, tilt2=0.0, phi12=0.0) :
     """
@@ -382,7 +266,7 @@ def meco_freq(total_mass, q, spin1z, spin2z) :
     eta = np.minimum(q / (1.0 + q)**2, 0.25)
     v_meco = np.vectorize(lalsimulation.SimIMRPhenomXfMECO)
     f_meco_dimless = v_meco(eta, spin1z, spin2z)
-    return DimensionlessToPhysical(total_mass).get_physical_frequency(f_meco_dimless)
+    return BinarySystem.from_mtot(mtot=total_mass, q=q).to_physical_frequency(f_meco_dimless)
 
 
 def ringdown_freq(m1, m2, a1=0.0, a2=0.0, tilt1=0.0, tilt2=0.0, phi12=0.0) :
@@ -427,13 +311,14 @@ def recommended_reference_freq(total_mass, q, spin1z, spin2z, f_ref=20.0, f_star
         float: A recommended analysis reference frequency (in Hz).
         
     Raises:
-        ValueError: If the required starting frequency is higher than the safe reference frequency.
+        ValueError: If the required starting frequency is higher than the recommended reference frequency.
     """
     f_meco = meco_freq(total_mass, q, spin1z, spin2z)
     scaled_meco = fudge_factor * f_meco
     recommended_ref = np.minimum(np.floor(scaled_meco), f_ref)
 
     if np.any(recommended_ref <= f_start):
-        raise ValueError(f"Provided f_start ({f_start} Hz) is higher than or equal to the safe f_ref ({recommended_ref} Hz).")
+        raise ValueError(
+            f"Provided f_start ({f_start} Hz) is higher than or equal to the recommended f_ref ({recommended_ref} Hz).")
         
     return recommended_ref
