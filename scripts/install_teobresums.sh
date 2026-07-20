@@ -7,11 +7,12 @@ mkdir build
 echo "Downloading TEOBResumS (Dali)..."
 git clone -b Dali https://bitbucket.org/teobresums/teobresums.git build/teobresums
 
-# Tested with commit ceb89bc
-git checkout ceb89bc
+cd build/teobresums
+# Pinned to commit ceb89bc
+git -c advice.detachedHead=false checkout ceb89bc
 
-pip install --no-build-isolation ./build/teobresums/Python
-pip install --no-build-isolation ./build/teobresums/PyCBC
+pip install --no-build-isolation ./Python
+pip install --no-build-isolation ./PyCBC
 
 echo "Successfully installed TEOBResumS"
 rm -rf build
