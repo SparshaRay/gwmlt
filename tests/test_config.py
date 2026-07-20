@@ -1,10 +1,6 @@
 from pathlib import Path
 
 def test_config_override() :
-    """
-    Test that the config override with context manager is working as expected.
-    """
-
     from gwmlt.config import config, config_override
 
     old_f_ref = config.waveform.f_ref
