@@ -13,7 +13,7 @@ from gwmlt.config import config
 # Detector Networks -------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Observatory :
 
     """
@@ -26,7 +26,7 @@ class Observatory :
         If Path, it should point to a npz file with 'freq' and 'psd' arrays,
         or an hdf5 file with noise timeseries.
     detector_list : list of str, or None, optional
-        Target detectors. Default is None.
+        Target detectors. Default is None,
         i.e., select all available detectors for the specified PSD tag.
     f_low : float
         Lower bound of frequency range for all analyses (in Hz).
@@ -47,6 +47,7 @@ class Observatory :
     ----
     If `detector_list` is None, it defaults to all detectors available for the specified noise psd.
     Otherwise, `noise_psds` and `detector_list` must be broadcastable to a common shape.
+    The values which must be specified in the children have no defaults here.
     """
 
     noise_psds    : list[str | Path | None]

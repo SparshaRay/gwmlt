@@ -100,8 +100,8 @@ def _get_pars(
         "mass1"  : source.mass_1,
         "mass2"  : source.mass_2,
 
-        "lambda_1" : source.lambda_1,
-        "lambda_2" : source.lambda_2,
+        "lambda1" : source.lambda_1,
+        "lambda2" : source.lambda_2,
 
         "spin1x" : source.l_frame.spin1x,
         "spin1y" : source.l_frame.spin1y,
