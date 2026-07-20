@@ -106,7 +106,7 @@ def pols_to_freq_features(
 
 def imrphenom_fillen_initconds(
     mass_1 : float, mass_2 : float,
-    chi1z  : float, chi2z  : float,
+    spin1z : float, spin2z : float,
     waveform_duration : float
 ) -> float :
     
@@ -120,9 +120,9 @@ def imrphenom_fillen_initconds(
         Mass of the primary in solar masses.
     mass_2 : float
         Mass of the secondary in solar masses.
-    chi1z : float
+    spin1z : float
         Dimensionless spin of the primary along the z-axis.
-    chi2z : float
+    spin2z : float
         Dimensionless spin of the secondary along the z-axis.
     waveform_duration : float
         Duration of the waveform in seconds.
@@ -149,8 +149,8 @@ def imrphenom_fillen_initconds(
             approximant = "IMRPhenomD", 
             mass1   = mass_1, 
             mass2   = mass_2, 
-            spin1z  = chi1z, 
-            spin2z  = chi2z, 
+            spin1z  = spin1z, 
+            spin2z  = spin2z, 
             f_lower = f_start,
         )
         return sig_len - calibrated_waveform_duration

@@ -6,7 +6,7 @@ Analytic Functions Related to Eccentricity
 # Throughout this file, the "bar" suffix denotes dimensionless quantities.
 # Except for the `ecc_from_envelop_freqs` function, the rest of the functions 
 # are exclusively dimensionless. To get dimensionless quantities from physical 
-# quantities and vice versa, use the conversion classes from `utils.physics`.
+# quantities and vice versa, use the conversion methods under `core.sources.BinarySystem`.
 
 
 import numpy as np
@@ -95,15 +95,15 @@ def GergelyODEs(
         Tuple containing the values of [a_bar, e],
         where a_bar is the dimensionless generalized semimajor axis and e is the eccentricity.
     nu : float
-        Dimensionless symmetric mass ratio, i.e., m1*m2
+        Dimensionless symmetric mass ratio, i.e., m1*m2 / m_tot^2
     q : float
         Mass ratio m1/m2
     S1z_bar : float
         Dimensionless angular momentum of the primary along the orbital angular momentum.
-        i.e., chi1 / (m1 / m_tot)^2
+        i.e., spin1z / (m1 / m_tot)^2
     S2z_bar : float
         Dimensionless angular momentum of the secondary along the orbital angular momentum.
-        i.e., chi2 / (m2 / m_tot)^2
+        i.e., spin2z / (m2 / m_tot)^2
     e_term : float, optional
         Terminal eccentricity, the threshold below which the system is considered circularized.
         Default is 1e-5.
@@ -181,15 +181,15 @@ def GergelyEvolve(
     Parameters
     ----------
     nu : float
-        Dimensionless symmetric mass ratio, i.e., m1*m2
+        Dimensionless symmetric mass ratio, i.e., m1*m2 / m_tot^2
     q : float
         Mass ratio m1/m2
     S1z_bar : float
         Dimensionless angular momentum of the primary along the orbital angular momentum.
-        i.e., chi1 / (m1 / m_tot)^2
+        i.e., spin1z / (m1 / m_tot)^2
     S2z_bar : float
         Dimensionless angular momentum of the secondary along the orbital angular momentum.
-        i.e., chi2 / (m2 / m_tot)^2
+        i.e., spin2z / (m2 / m_tot)^2
     f_start_bar : float
         Starting dimensionless GW frequency.
     ecc_start : float
@@ -277,15 +277,15 @@ def gergely_f_start_bar(
     Parameters
     ----------
     nu : float
-        Dimensionless symmetric mass ratio, i.e., m1*m2
+        Dimensionless symmetric mass ratio, i.e., m1*m2 / m_tot^2
     q : float
         Mass ratio m1/m2
     S1z_bar : float
         Dimensionless angular momentum of the primary along the orbital angular momentum.
-        i.e., chi1 / (m1 / m_tot)^2
+        i.e., spin1z / (m1 / m_tot)^2
     S2z_bar : float
         Dimensionless angular momentum of the secondary along the orbital angular momentum.
-        i.e., chi2 / (m2 / m_tot)^2
+        i.e., spin2z / (m2 / m_tot)^2
     ecc_start : float
         Starting eccentricity.
     target_tau : float

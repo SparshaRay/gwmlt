@@ -145,8 +145,8 @@ def _get_pars(
             f_start = imrphenom_initconds(
                 mass_1 = source.mass_1,
                 mass_2 = source.mass_2,
-                chi1z  = source.l_frame.spin1z,
-                chi2z  = source.l_frame.spin2z,
+                spin1z = source.l_frame.spin1z,
+                spin2z = source.l_frame.spin2z,
                 waveform_duration = observatory.wf_duration,
             )
             initial_conditions["f_lower"] = f_start
@@ -155,8 +155,8 @@ def _get_pars(
             ecc_start, f_start = teobresums_initconds(
                 mass_1 = source.mass_1,
                 mass_2 = source.mass_2,
-                chi1z  = source.l_frame.spin1z,
-                chi2z  = source.l_frame.spin2z,
+                spin1z = source.l_frame.spin1z,
+                spin2z = source.l_frame.spin2z,
                 ecc_ref = morphology.eccentricity,
                 f_ref   = observatory.ecc_f_ref,
                 waveform_duration = observatory.wf_duration,

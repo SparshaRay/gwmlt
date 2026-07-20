@@ -14,7 +14,7 @@ from scipy.interpolate import RBFInterpolator
 from scipy.optimize import root_scalar
 
 from gwmlt.config import config
-from gwmlt.utils.physics import PhysicalToDimensionless, DimensionlessToPhysical
+from gwmlt.core.sources import LFrameSpins, BinarySystem
 from gwmlt.eccentric.analytic import ecc_from_envelop_freqs
 
 
@@ -476,8 +476,8 @@ def teobresumsfits_initial_conditions(
 def teobresumsfits_generalized_initconds(
     mass_1 : float,
     mass_2 : float,
-    chi1z  : float,
-    chi2z  : float,
+    spin1z  : float,
+    spin2z  : float,
     ecc_ref : float,
     f_ref   : float,
     waveform_duration : float,
@@ -494,9 +494,9 @@ def teobresumsfits_generalized_initconds(
         Mass of the primary in solar masses.
     mass_2 : float
         Mass of the secondary in solar masses.
-    chi1z : float
+    spin1z : float
         Dimensionless spin of the primary along the orbital angular momentum.
-    chi2z : float
+    spin2z : float
         Dimensionless spin of the secondary along the orbital angular momentum.
     ecc_ref : float
         Reference eccentricity at the reference frequency.
@@ -516,29 +516,30 @@ def teobresumsfits_generalized_initconds(
         starting frequency (f_start) in Hz for TEOBResumS.
     """
 
-    eta     = (mass_1 * mass_2) / ((mass_1 + mass_2)**2)
-    chi_eff = (mass_1*chi1z + mass_2*chi2z) / (mass_1 + mass_2)
+    system = BinarySystem(
+        mass_1=mass_1, 
+        mass_2=mass_2, 
+        spins=LFrameSpins(spin1z=spin1z, spin2z=spin2z)
+    )
 
-    to_dimensionless = PhysicalToDimensionless(mass_1, mass_2)
-    f_ref_bar = to_dimensionless.get_dimless_frequency(f_ref)
-    sig_tau   = to_dimensionless.get_dimless_time(waveform_duration)
+    f_ref_bar = system.to_dimless_frequency(f_ref)
+    sig_tau   = system.to_dimless_time(waveform_duration)
 
     # Account for signal duration scaling with symmetric mass ratio
-    calibrated_sig_tau = sig_tau * (4 * eta) 
+    calibrated_sig_tau = sig_tau * (4.0 * system.eta)
 
     log_sig_tau   = np.log10(calibrated_sig_tau)
     log_f_ref_bar = np.log10(f_ref_bar)
 
     ecc_start, log_f_start_bar = teobresumsfits_initial_conditions(
         log_sig_tau=log_sig_tau,
-        chi_eff=chi_eff,
+        chi_eff=system.chi_eff,
         ecc_ref=ecc_ref,
         log_f_ref_bar=log_f_ref_bar,
         extrapolate=extrapolate
     )
 
-    to_physical = DimensionlessToPhysical(mass_1 + mass_2)
     f_start_bar = 10 ** log_f_start_bar
-    f_start     = to_physical.get_physical_frequency(f_start_bar)
+    f_start     = system.to_physical_frequency(f_start_bar)
 
     return ecc_start, f_start
