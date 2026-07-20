@@ -578,5 +578,5 @@ class BBHSystem(BinarySystem) :
     
     # Enforce lambda values of 0.0 for BBH systems
     
-    lambda_1: float = field(default=0.0, init=False)
-    lambda_2: float = field(default=0.0, init=False)
+    lambda_1: float = field(default=0.0, init=False, repr=False)
+    lambda_2: float = field(default=0.0, init=False, repr=False)
