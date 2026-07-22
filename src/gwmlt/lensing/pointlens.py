@@ -62,7 +62,7 @@ def time_delay(
     zl : float = 0
 ) -> float :
     """
-    Returns the dimensionful time-delay between the two micro-images in seconds.
+    Returns the time-delay between the two micro-images in seconds.
 
     Parameters
     ----------
@@ -181,7 +181,7 @@ def _Fw_exact(w, y):
     return result if np.ndim(w)>0 else result[0]
 
 
-# Dimensionful variants of the above functions
+# Physical/dimensionful variants of the above functions
 
 def Ff_geometric_optics(f, ml, y, zl=0):
     """Dimensionful variant of _Fw_geometric_optics."""
@@ -196,7 +196,7 @@ def Ff_exact(f, ml, y, zl=0):
     return _Fw_exact(_w_of_f(f, ml, zl), y)
 
 
-# Lensing Amplification Factor with Hybrid Regime Switching ---------------------------------------
+# Lensing amplification factor by automatically selecting the regime ------------------------------
 # -------------------------------------------------------------------------------------------------
 
 def _Fw_hybrid(w, y):
@@ -241,12 +241,12 @@ def Ff_hybrid(
 ) -> complex | np.typing.NDArray[np.complex128] :
     """
     Numerically stable evaluation of the point-lens amplification factor F(f)
-    for given dimensionful frequencies f, lens mass, lens redshift, and impact parameter.
+    for given physical frequencies f, lens mass, lens redshift, and impact parameter.
 
     Parameters
     ----------
     f : float or array_like
-        Dimensionful frequency in Hz.
+        Physical frequency in Hz.
     ml : float
         Lens mass (in solar masses).
     y : float
