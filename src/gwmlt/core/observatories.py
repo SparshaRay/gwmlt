@@ -64,6 +64,7 @@ class Observatory :
 
     @property
     def active_detectors(self) -> list[str]:
+        """List of the active detectors in the observatory network."""
         return list(self.resolved_paths.keys())
 
 

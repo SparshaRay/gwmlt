@@ -2,4 +2,4 @@
 
 Various tools to generate GW injections and work with ML pipelines.
 
-Based on https://git.ligo.org/anuj.mishra/gwmat/ and https://gitlab.com/anuj-mishra/gweat
+Partially based on https://git.ligo.org/anuj.mishra/gwmat/ and https://gitlab.com/anuj-mishra/gweat

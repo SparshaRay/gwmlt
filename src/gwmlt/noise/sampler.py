@@ -51,6 +51,7 @@ def sample_gaussian_noise(
         A tuple containing the time series of the sampled noise and the corresponding PSD.
     """
 
+    # Read the PSD from the provided file path
     with np.load(file_path) as f:
         freq = f['freq']
         psd  = f['psd']
@@ -93,7 +94,7 @@ def sample_gaussian_noise(
         seed=seed,
         sample_rate=sample_rate,
         low_frequency_cutoff=f_low,
-        filter_duration=4.0
+        filter_duration=4.0, # good default
     ).time_slice(start_time, end_time)
 
     return ts, psd
