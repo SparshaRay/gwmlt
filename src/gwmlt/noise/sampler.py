@@ -6,6 +6,7 @@ import h5py
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import warnings
 
 from pycbc.types.timeseries import TimeSeries
 from pycbc.types.frequencyseries import FrequencySeries
@@ -54,6 +55,18 @@ def sample_gaussian_noise(
         freq = f['freq']
         psd  = f['psd']
 
+    # If lowest frequency in PSD is above f_low, extend the PSD to include f_low
+    if np.min(freq) > f_low :
+        warnings.warn(
+            f"Lowest frequency in PSD file ({np.min(freq)} Hz) is above "
+            f"the requested low frequency cutoff ({f_low} Hz).\n"
+            "May lead to unintended artifacts in the generated noise time series."
+        )
+        assert np.argmin(freq) == 0, "Frequency array should be in ascending order"
+        freq = np.insert(freq, 0, f_low)
+        psd  = np.insert(psd, 0, np.exp(np.log(psd[0])/1.5))
+
+    # Read and interpolate the PSD
     psd_duration = (psd_len - 1) / (sample_rate / 2)
     delta_f = 1.0 / psd_duration
 
