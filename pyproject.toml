@@ -12,27 +12,36 @@ requires-python = ">=3.13, <3.14"
 dependencies = [
     # Core
     "numpy",
-    "scipy",
+    "scipy >= 1.18",
+    "juliacall",
     "matplotlib",
+    "seaborn",
 
     # Data handling
+    "sqlmodel",
     "pandas",
-    "h5py",
     "tables",
+    "h5py",
 
     # Astrophysics
-    "pycbc",
+    "pycbc ~= 2.10.0",
     "lalsuite",
     "astropy",
 
     # Machine learning
     "torch",
+    "torchvision",
+    "scikit-learn",
+    "scikit-image",
+
+    # Cluster computing
+    "dask",
 
     # Miscellaneous
-    "juliacall",
     "tqdm",
-    "pyinstrument",
     "notebook",
+    "pyinstrument",
+    "marimo[recommended]",
 ]
 
 authors = [
