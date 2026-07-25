@@ -3,8 +3,11 @@ Generate GW Injections
 """
 
 from dataclasses import dataclass
-from pycbc.types.timeseries import TimeSeries
+import warnings
 import numpy as np
+
+from pycbc.types.timeseries import TimeSeries
+from lal import LIGOTimeGPS
 
 from gwmlt.core.sources import BinarySystem
 from gwmlt.core.morphologies import Morphology, LensedProtocol
@@ -60,6 +63,8 @@ class InjectionResult :
         This will be NaN if even one of the detectors have no noise specified.
     lensing_td : float | None
         The time delay introduced by lensing, if applicable. None if no lensing was applied.
+    geocent_time : LIGOTimeGPS
+        The geocenter trigger time of the injection.
     gen_pars : dict
         Dictionary containing the parameters used for waveform generation.
     _pre_lens_pols : tuple[TimeSeries, TimeSeries]
@@ -70,6 +75,7 @@ class InjectionResult :
     injections      : dict[str, DetectorInjection]
     network_snr     : float
     lensing_td      : float | None
+    geocent_time    : LIGOTimeGPS
     gen_pars        : dict
     _pre_lens_pols  : tuple[TimeSeries, TimeSeries]
     _post_lens_pols : tuple[TimeSeries, TimeSeries]
@@ -108,6 +114,34 @@ def generate_injections(
         The complete results of the injection pipeline, including detector injections, 
         network SNR, lensing time delay, and waveform generation parameters.
     """
+
+    # Part 0. Sanity checks and warnings
+
+    if hasattr(observatory, 'wf_duration') :
+
+        max_geocent_tds = []
+        for detector_str in observatory.active_detectors :
+            max_geocent_tds.append(config.injection.max_geocent_to_det_td[detector_str])
+
+        min_req_wf_dur = (
+            + max(max_geocent_tds) * 2
+            + (
+                + config.injection.pre_merger_datapoints
+                + config.injection.correlation_grace_order / 2
+                + config.injection.highpass_fir_order      / 2
+                + config.injection.lowpass_fir_order       / 2
+                + config.injection.whiten_filter_order     / 2
+                + config.injection.safety_padding          / 2
+            ) / observatory.sample_rate
+        )
+
+        if int(observatory.wf_duration) < int(min_req_wf_dur) :
+            warnings.warn(
+                f"Observatory waveform duration ({int(observatory.wf_duration)} s) is less than "
+                f"the minimum required duration ({int(min_req_wf_dur)} s) for the current injection configuration.\n"
+                "This may lead to unintended truncations. Consider increasing the observatory's `wf_duration`."
+            )
+
 
     # Part 1. Generate the unlensed waveform in the source frame
 
@@ -199,6 +233,7 @@ def generate_injections(
         injections      = detector_injections,
         network_snr     = network_snr,
         lensing_td      = lensing_td,
+        geocent_time    = source.geocent_time,
         gen_pars        = gen_pars,
         _pre_lens_pols  = (pre_lens_hp,  pre_lens_hc),
         _post_lens_pols = (post_lens_hp, post_lens_hc)
