@@ -81,8 +81,8 @@ def base_source():
         ),
         # 4. Decihertz + Eccentric (TEOBResumS with IndIGO-D S2 noise)
         (
-            Eccentric(eccentricity=0.15),
-            Decihertz(wf_duration=128.0, noise_psds=['S2_gaus'], detector_list=['IndIGO-D']),
+            Eccentric(eccentricity=0.075),
+            Decihertz(wf_duration=1200.0, noise_psds=['S2_gaus'], detector_list=['IndIGO-D']),
             ['IndIGO-D']
         ),
     ]
