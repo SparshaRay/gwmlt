@@ -80,9 +80,8 @@ gcc = "*"
 gwmlt = { path = ".", editable = true }
 
 [tool.setuptools.package-data]
-"gwmlt" = ["data/**/*"]
+"gwmlt" = ["data/**/*", "juliapkg.json"]
 
 [tool.pixi.tasks]
 install-teobresums = "bash scripts/install_teobresums.sh"
-install-chypergeom = "bash scripts/install_chypergeom.sh"
 tests = "pytest -v" 
