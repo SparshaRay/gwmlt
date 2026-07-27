@@ -18,9 +18,9 @@ from scipy.optimize import root_scalar
 # -------------------------------------------------------------------------------------------------
 
 def ecc_from_envelop_freqs(
-    f_apos : float | np.ndarray, 
-    f_peri : float | np.ndarray
-) -> float | np.ndarray :
+    f_apos : float | np.typing.ArrayLike, 
+    f_peri : float | np.typing.ArrayLike
+) -> float | np.typing.ArrayLike :
     
     """
     Get eccentricity from apocenter and pericenter frequencies.\n
@@ -28,14 +28,14 @@ def ecc_from_envelop_freqs(
 
     Parameters
     ----------
-    f_apos : float | np.ndarray
+    f_apos : float | array_like
         Apocenter frequencies.
-    f_peri : float | np.ndarray
+    f_peri : float | array_like
         Pericenter frequencies.
     
     Returns
     -------
-    float | np.ndarray
+    float | array_like
         Eccentricity corresponding to the given apocenter and pericenter frequencies.
 
     Note
@@ -173,7 +173,12 @@ def GergelyEvolve(
     max_tau : float = 1e8,
     e_term : float = 1e-5,
     **kwargs
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] :
+) -> tuple[
+    np.typing.NDArray[np.float64], 
+    np.typing.NDArray[np.float64], 
+    np.typing.NDArray[np.float64], 
+    np.typing.NDArray[np.float64]
+    ] :
     
     """
     Evolves the Gergely ODEs in dimensionless time.
@@ -205,8 +210,14 @@ def GergelyEvolve(
 
     Returns
     -------
-    tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
-        Tuple containing the arrays of (tau, a_bar, ecc, f_bar).
+    tau_arr : numpy.ndarray
+        Array of dimensionless time values.
+    a_bar_arr : numpy.ndarray
+        Array of dimensionless generalized semimajor axis values.
+    ecc_arr : numpy.ndarray
+        Array of eccentricity values.
+    f_bar_arr : numpy.ndarray
+        Array of dimensionless GW frequency values.
     """
     
     # Termination events -------------------------------------------------

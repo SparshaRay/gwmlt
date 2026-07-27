@@ -18,7 +18,7 @@ from gwmlt.eccentric.analytic import ecc_from_envelop_freqs
 def pols_to_freq_features(
     hp : TimeSeries,
     hc : TimeSeries,
-) -> dict[str, np.ndarray] :
+) -> dict :
     
     """
     Get various frequency and phase evolution trends over time from the plus and cross 
@@ -39,9 +39,10 @@ def pols_to_freq_features(
 
     Returns
     -------
-    dict[str, np.ndarray]
-        Dictionary containing the frequency and phase evolutions over time, 
-        as well as the peak and through locations of the frequency evolution.
+    dict
+        Dictionary containing the frequency and phase evolutions over time, various 
+        polynomial fits, eccentricity interpolators, the peak and trough locations of the 
+        frequency evolution, etc. Check source code for the exact keys and their descriptions.
     """
 
     hp = hp.time_slice(hp.start_time, 0.0)

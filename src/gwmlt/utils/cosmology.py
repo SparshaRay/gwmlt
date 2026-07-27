@@ -198,32 +198,36 @@ def differential_comoving_volume(z: float) -> float :
 # SFR and merger rates ----------------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------
 
-def madau_dickinson_fishbach_sfr(z: float | np.ndarray) -> float | np.ndarray :
+def madau_dickinson_fishbach_sfr(
+    z: float | np.typing.NDArray[np.float64]
+) -> float | np.typing.NDArray[np.float64] :
 
     """
     Star formation rate following Fishbach et al. (2018) [https://arxiv.org/abs/1805.10270],
     based on Madau & Dickinson (2014) [https://arxiv.org/abs/1403.0007].
 
     Parameters:
-        z (float or np.ndarray): Redshift.
+        z (float or numpy.ndarray): Redshift.
 
     Returns:
-        float or np.ndarray: Star formation rate in Gpc^-3 yr^-1
+        float or numpy.ndarray: Star formation rate in Gpc^-3 yr^-1
     """
 
     return 0.015 * ((1.0 + z) ** 2.7) / (1.0 + ((1.0 + z) / 2.9) ** 5.6)
 
 
-def madau_fragos_sfr(z: float | np.ndarray) -> float | np.ndarray :
+def madau_fragos_sfr(
+    z: float | np.typing.NDArray[np.float64]
+) -> float | np.typing.NDArray[np.float64] :
 
     """
     Star formation rate following Madau & Fragos (2016) [https://arxiv.org/abs/1606.07887].
 
     Parameters:
-        z (float or np.ndarray): Redshift.
+        z (float or numpy.ndarray): Redshift.
 
     Returns:
-        float or np.ndarray: Star formation rate in Gpc^-3 yr^-1
+        float or numpy.ndarray: Star formation rate in Gpc^-3 yr^-1
     """
 
     return 0.010 * ((1.0 + z) ** 2.6) / (1.0 + ((1.0 + z) / 3.2) ** 6.2)

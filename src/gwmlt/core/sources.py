@@ -492,27 +492,39 @@ class BinarySystem :
 
     # Dimensionless and physical interconversion methods ---------------------------
 
-    def to_dimless_time(self, time_s: float | np.ndarray) -> float | np.ndarray:
+    def to_dimless_time(
+        self, time_s: float | np.typing.NDArray[np.float64]
+    ) -> float | np.typing.NDArray[np.float64] :
         """Convert physical time in seconds to dimensionless time."""
         return time_s / self.t_scale
     
-    def to_physical_time(self, tau: float | np.ndarray) -> float | np.ndarray:
+    def to_physical_time(
+        self, tau: float | np.typing.NDArray[np.float64]
+    ) -> float | np.typing.NDArray[np.float64] :
         """Convert dimensionless time to physical time in seconds."""
         return tau * self.t_scale
 
-    def to_dimless_length(self, length_m: float | np.ndarray) -> float | np.ndarray:
+    def to_dimless_length(
+        self, length_m: float | np.typing.NDArray[np.float64]
+    ) -> float | np.typing.NDArray[np.float64] :
         """Convert physical length in meters to dimensionless length."""
         return length_m / self.l_scale
-    
-    def to_physical_length(self, length_bar: float | np.ndarray) -> float | np.ndarray:
+
+    def to_physical_length(
+        self, length_bar: float | np.typing.NDArray[np.float64]
+    ) -> float | np.typing.NDArray[np.float64] :
         """Convert dimensionless length to physical length in meters."""
         return length_bar * self.l_scale
 
-    def to_dimless_frequency(self, freq_hz: float | np.ndarray) -> float | np.ndarray:
+    def to_dimless_frequency(
+        self, freq_hz: float | np.typing.NDArray[np.float64]
+    ) -> float | np.typing.NDArray[np.float64] :
         """Convert physical frequency in Hz to dimensionless frequency (Mf)."""
         return freq_hz * self.t_scale
-    
-    def to_physical_frequency(self, freq_bar: float | np.ndarray) -> float | np.ndarray:
+
+    def to_physical_frequency(
+        self, freq_bar: float | np.typing.NDArray[np.float64]
+    ) -> float | np.typing.NDArray[np.float64] :
         """Convert dimensionless frequency (Mf) to physical frequency in Hz."""
         return freq_bar / self.t_scale
 

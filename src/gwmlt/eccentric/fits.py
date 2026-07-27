@@ -25,10 +25,10 @@ class AnisotropicTEFPhenom :
     
     def __init__(
         self, 
-        x_vals : np.ndarray, 
-        y_vals : np.ndarray, 
-        z_vals : np.ndarray, 
-        fit_vals : np.ndarray,
+        x_vals : np.typing.NDArray[np.float64], 
+        y_vals : np.typing.NDArray[np.float64], 
+        z_vals : np.typing.NDArray[np.float64], 
+        fit_vals : np.typing.NDArray[np.float64],
         smoothing : float = 0.025, 
         neighbors : int = 256,
         poly_interp_low : float = np.log10(5e2),
@@ -40,20 +40,20 @@ class AnisotropicTEFPhenom :
 
         Parameters
         ----------
-        x_vals : array-like
+        x_vals : numpy.ndarray
             The 1st dimension coordinates of the data points.
-        y_vals : array-like
+        y_vals : numpy.ndarray
             The 2nd dimension coordinates of the data points.
-        z_vals : array-like
+        z_vals : numpy.ndarray
             The 3rd dimension coordinates of the data points.
-        fit_vals : array-like
+        fit_vals : numpy.ndarray
             The values to be interpolated at the training data points.
         smoothing : float, optional
             Smoothing parameter for the RBF interpolator. Default is 0.025.
         neighbors : int, optional
             Number of nearest neighbors to use for interpolation. Default is 256.
         poly_interp_low : float, optional
-            The lower bound for datapoint polynomial interpolation. Default is np.log10(5e2).
+            The lower bound for datapoint polynomial interpolation. Default is `numpy.log10(5e2)`.
         poly_interp_high : float | None, optional
             The upper bound for polynomial interpolation. If None, the query x_val is used.
             Default is None.
@@ -68,9 +68,9 @@ class AnisotropicTEFPhenom :
         self.anchor_points = fit_vals.shape[3] if len(fit_vals.shape)==4 else 1
 
         points = np.vstack((
-            np.array(x_vals).flatten(), 
-            np.array(y_vals).flatten(), 
-            np.array(z_vals).flatten()
+            x_vals.flatten(), 
+            y_vals.flatten(), 
+            z_vals.flatten()
         )).T
 
         values = np.array(fit_vals).reshape(-1, self.anchor_points)
@@ -89,14 +89,16 @@ class AnisotropicTEFPhenom :
             neighbors = neighbors
         )
         
-    def __call__(self, query_points: np.ndarray) -> np.ndarray :
+    def __call__(
+        self, query_points: np.typing.NDArray[np.float64]
+    ) -> float | np.typing.NDArray[np.float64] :
 
         """
         Queries the interpolator at given points.
         
         Parameters
         ----------
-        query_points: array-like of shape (M, 3) or (3,)
+        query_points: array-like of shape `(M, 3)` or `(3,)`
             Coordinates of the points where the interpolation is to be evaluated.
         
         Returns
@@ -132,11 +134,13 @@ class AnisotropicTEFPhenom :
         if len(res) == 1 : res = res.item()
         return res
         
-    def poly(self, x_val: float, y_val: float, z_val: float, deg:int=6) -> np.polynomial.Polynomial :
+    def poly(
+        self, x_val: float, y_val: float, z_val: float, deg: int = 6
+    ) -> np.polynomial.Polynomial :
 
         """
-        Return polynomial fit at the given point.
-        Only valid for non-scalar data.
+        Returns a numpy polynomial object fitted over the anchor points 
+        for the given parameter values. Only valid for non-scalar datapoints.
         
         Parameters
         ----------
@@ -151,7 +155,7 @@ class AnisotropicTEFPhenom :
         
         Returns
         -------
-        np.polynomial.Polynomial
+        numpy.polynomial.Polynomial
             Polynomial fit at the given point.
         
         Notes
