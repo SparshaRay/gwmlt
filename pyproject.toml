@@ -19,23 +19,29 @@ dependencies = [
 
     # Data handling
     "sqlmodel",
+    "pymysql",
+    "pyarrow",
     "pandas",
     "tables",
     "h5py",
 
-    # Astrophysics
-    "pycbc ~= 2.10.0",
-    "lalsuite",
+    # Astronomy and GW-related
     "astropy",
+    "pycbc ~= 2.10.0",
+    "gwpopulation",
+    "lalsuite",
+    "bilby",
 
     # Machine learning
     "torch",
     "torchvision",
     "scikit-learn",
     "scikit-image",
+    "timm",
 
     # Cluster computing
-    "dask",
+    "dask[complete]",
+    "dask-jobqueue",
 
     # Miscellaneous
     "tqdm",
@@ -65,6 +71,7 @@ platforms = ["linux-64"]
 [tool.pixi.dependencies]
 python = "3.13.*"
 pytest = "*"
+mysql = "*"
 pip = "*"
 gsl = "*"
 gcc = "*"
