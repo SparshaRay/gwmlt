@@ -9,7 +9,7 @@ from pycbc.detector import get_available_detectors
 @dataclass(frozen=True)
 class InjectionConfig :
     """
-    Configurations for Injections.
+    Configurations for injections.
     """
 
     pre_merger_datapoints   : int = int(4096 * 2.5)

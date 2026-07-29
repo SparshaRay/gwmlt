@@ -7,7 +7,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class CosmologyConfig :
     """
-    Configurations for cosmology configurations.
+    Cosmology constants configuration.
     Based on Planck 2018 results (TT,TE,EE+lowE+lensing+BAO constraints).
 
     References :

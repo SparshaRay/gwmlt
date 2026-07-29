@@ -1,5 +1,6 @@
 """
-Lensing by Isolated Point-mass Lenses
+Lensing by Isolated Point-mass Lenses.
+Based on Takahashi & Nakamura (2003) point-lens formalism [https://arxiv.org/abs/astro-ph/0305055].
 """
 
 import numpy as np
@@ -165,7 +166,7 @@ def _Fw_exact(w, y):
 
     w_nz = w_arr[nz]
 
-    xm = (y + np.sqrt(y * y + 4.0)) / 2.0
+    xm = _x_minima(y)
     pm = ((xm - y) ** 2) / 2.0 - np.log(xm)
     hp = np.log(w_nz / 2.0) - (2.0 * pm)
 
@@ -227,7 +228,7 @@ def _Fw_hybrid(w, y):
         if np.any(cond_geo) :
             result[cond_geo] = _Fw_geometric_optics(w_arr[cond_geo], y)
 
-    else : result[:] = _Fw_quasigeometric_optics(w_arr, y)
+    else : result[:] = _Fw_exact(w_arr, y)
         
     return result if np.ndim(w)>0 else result[0]
 
