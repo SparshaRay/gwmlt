@@ -12,6 +12,7 @@ from gwmlt.config.noise import NoiseConfig
 from gwmlt.config.waveform import WaveformConfig
 from gwmlt.config.injection import InjectionConfig
 from gwmlt.config.cosmology import CosmologyConfig
+from gwmlt.config.population import PopulationConfig
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,9 @@ class GlobalConfig :
 
     cosmology: CosmologyConfig = field(default_factory=CosmologyConfig)
     """Configuration for cosmology constants"""
+
+    population: PopulationConfig = field(default_factory=PopulationConfig)
+    """Configuration for population sampling"""
 
     teobresums_fits_path: Path = TEOBRESUMS_FITS
     """Path to the TEOBResumS evolution fits file."""
