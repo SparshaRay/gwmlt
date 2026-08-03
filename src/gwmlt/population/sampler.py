@@ -2,8 +2,13 @@
 Sample Binary Parameters
 """
 
+import random
 import numpy as np
 import pandas as pd
+
+from pathlib import Path
+from joblib import Memory
+from scipy.interpolate import RectBivariateSpline
 
 import bilby
 import gwpopulation
@@ -14,12 +19,16 @@ from gwmlt.utils.cosmology import (
     luminosity_distance
 )
 
+# q|m_src PDF interpolator cache
+memory = Memory(str(Path(__file__).resolve().parent/"__pycache__"), verbose=0) 
+
 
 def population_sampler(
     num_samples : int, 
     seed : int,
     grid_points : int = 1000,
-    ecc_range : tuple[int, int] = (0.05, 0.50)
+    ecc_range : tuple[int, int] = (0.05, 0.50),
+    use_q_pdf_interpolator : bool = False
 ) -> pd.DataFrame :
 
     """
@@ -36,6 +45,11 @@ def population_sampler(
         Must not be same as `num_samples`. Defaults to 1000.
     ecc_range : tuple[int, int]
         Range of eccentricities to sample from. Defaults to (0.05, 0.50).
+    use_q_pdf_interpolator : bool
+        Use an bivariate spline interpolator for obtaining the `q|m1_src` PDF. 
+        This is much faster than constructing the distributions from scratch.
+        The first time this function is executed, a cache is created, which may take a few seconds.
+        Default is False.
 
     Returns
     -------
@@ -82,12 +96,13 @@ def population_sampler(
 
     # 2b. Mass distribution model ----------------------------------------
 
-    mass_model = gwpopulation.models.mass.SinglePeakSmoothedMassDistribution()
+    mass_model = gwpopulation.models.mass.SinglePeakSmoothedMassDistribution(cache=False)
 
     m1_src_interp_grid = np.geomspace(m1_src_min, m1_src_max, grid_points)
     q_interp_grid      = np.linspace(1.0, 0.0, grid_points, endpoint=False)[::-1]
 
     # Primary mass (source frame) PDF
+
     m1_src_pdf = mass_model.p_m1(
         dataset = dict(mass_1 = m1_src_interp_grid),
         **{
@@ -102,17 +117,35 @@ def population_sampler(
     )
 
     # Mass ratio PDF for given primary mass (source frame)
-    def q_pdf(m1_src) :
+
+    def q_pdf_cnstrc(m1_src) :
         dataset = dict(
             mass_1     = m1_src, 
             mass_ratio = q_interp_grid
         )
-        return  mass_model.p_q(
+        mass_model = gwpopulation.models.mass.SinglePeakSmoothedMassDistribution(cache=False)
+        return mass_model.p_q(
             dataset = dataset,
             beta    = pop_params["beta"],
             mmin    = pop_params["mmin"],
             delta_m = pop_params["delta_m"],
-        )
+        ).copy()
+
+    # Fast q|m1_src pdf interpolator
+
+    if use_q_pdf_interpolator :
+
+        @memory.cache
+        def _get_cached_q_pdf_grid(config, grid_points) :
+            return np.array([q_pdf_cnstrc(m1_src) for m1_src in m1_src_interp_grid])
+
+        _q_pdf_spline = RectBivariateSpline(m1_src_interp_grid, q_interp_grid,
+            _get_cached_q_pdf_grid(config, grid_points))
+
+        def q_pdf_spline(m1_src) : return _q_pdf_spline(m1_src, q_interp_grid)[0]
+        q_pdf = q_pdf_spline
+
+    else : q_pdf = q_pdf_cnstrc 
 
     # 2c. Spin tilt model ------------------------------------------------
 
