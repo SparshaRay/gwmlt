@@ -19,7 +19,6 @@ dependencies = [
 
     # Data handling
     "sqlmodel",
-    "pymysql",
     "pyarrow",
     "pandas",
     "tables",
@@ -45,6 +44,7 @@ dependencies = [
 
     # Miscellaneous
     "tqdm",
+    "pyyaml",
     "notebook",
     "pyinstrument",
     "marimo[recommended]",
@@ -71,7 +71,6 @@ platforms = ["linux-64"]
 [tool.pixi.dependencies]
 python = "3.13.*"
 pytest = "*"
-mysql = "*"
 pip = "*"
 gsl = "*"
 gcc = "*"
