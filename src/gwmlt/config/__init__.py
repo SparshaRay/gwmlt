@@ -7,12 +7,13 @@ from contextlib import contextmanager
 from typing import Any, Generator
 from pathlib import Path
 
-from gwmlt.config.base import PROJECT_ROOT, TEOBRESUMS_FITS
+from gwmlt.config.base import DATABASE_ROOT, TEOBRESUMS_FITS
 from gwmlt.config.noise import NoiseConfig
 from gwmlt.config.waveform import WaveformConfig
 from gwmlt.config.injection import InjectionConfig
 from gwmlt.config.cosmology import CosmologyConfig
 from gwmlt.config.population import PopulationConfig
+from gwmlt.config.orchestrator import OrchestratorConfig
 
 
 @dataclass(frozen=True)
@@ -36,14 +37,18 @@ class GlobalConfig :
     population: PopulationConfig = field(default_factory=PopulationConfig)
     """Configuration for population sampling"""
 
+    orchestrator: OrchestratorConfig = field(default_factory=OrchestratorConfig)
+    """Configuration for orchestrator workflows"""
+
     teobresums_fits_path: Path = TEOBRESUMS_FITS
     """Path to the TEOBResumS evolution fits file."""
     
-    project_root: Path = PROJECT_ROOT
+    database_root: Path = DATABASE_ROOT
     """
-    Root directory of the project
-    Determined from the PROJECT_ROOT environment variable.
-    If not set, it defaults to the parent root directory of this module.
+    Root of the database directory. All databases and all the data generated
+    along with their respective logs file are stored here. Determined from the 
+    `DATABASE_ROOT` environment variable. If not set, it defaults to the 
+    `database` sibling directory of the root directory of this module.
     """
 
 # Instantiate the global configuration instance
@@ -64,7 +69,7 @@ def config_override(overrides: dict[str, Any]) -> Generator[GlobalConfig, None, 
     print(config.waveform.f_ref)  # Prints: 20.0
     with config_override({
         "waveform.f_ref": 40.0,
-        "project_root": Path("/new/root")
+        "DATABASE_ROOT": Path("/new/root")
     }):
         print(config.waveform.f_ref)  # Prints: 40.0
     ```    

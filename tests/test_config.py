@@ -4,17 +4,17 @@ def test_config_override() :
     from gwmlt.config import config, config_override
 
     old_f_ref = config.waveform.f_ref
-    old_project_root = config.project_root
+    old_database_root = config.database_root
 
     with config_override({
         "waveform.f_ref": 0.0,
-        "project_root": Path("/new/root")
+        "database_root": Path("/new/root")
     }) :
         new_f_ref = config.waveform.f_ref
-        new_project_root = config.project_root
+        new_database_root = config.database_root
 
     final_f_ref = config.waveform.f_ref
-    final_project_root = config.project_root
+    final_database_root = config.database_root
         
     assert old_f_ref == final_f_ref != new_f_ref == 0.0
-    assert old_project_root == final_project_root != new_project_root == Path("/new/root")
+    assert old_database_root == final_database_root != new_database_root == Path("/new/root")
